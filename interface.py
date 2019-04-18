@@ -4,6 +4,8 @@ from pathlib import Path
 import subprocess
 import json
 
+import numpy as np
+
 
 def load_config(filename='.fispact_data.json', config='TENDL2014'):
     """Loads FISPACT data configuration.
@@ -206,7 +208,8 @@ def create_files(files='files', collapx='COLLAPX', fluxes='fluxes',
 
 
 def create_convert(ebins, flux, convert='convert', fluxes='fluxes',
-                   arb_flux='arb_flux', files='files.convert', cwd=Path()):
+                   arb_flux='arb_flux', files='files.convert', cwd=Path(),
+                   ind_nuc=default_libs.get('ind_nuc', None)):
     """Creates file for fispact flux conversion to the 709 groups.
 
     Parameters
@@ -226,6 +229,8 @@ def create_convert(ebins, flux, convert='convert', fluxes='fluxes',
     cwd : Path
         Working directory. In this directory files will be created. The folder
         must be exist.
+    ind_nuc : str
+        A path to nuclide index.
 
     Returns
     -------
@@ -233,7 +238,7 @@ def create_convert(ebins, flux, convert='convert', fluxes='fluxes',
         Tuple of arguments for FISPACT.
     """
     with open(cwd / files, mode='w') as f:
-        # f.write('ind_nuc  ' + DATA_PATH + LIBS['ind_nuc'] + '\n')
+        f.write('ind_nuc  ' + ind_nuc + '\n')
         f.write('fluxes  ' + fluxes + '\n')
         f.write('arb_flux  ' + arb_flux + '\n')
 
