@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
-from ..constants import TIME_UNITS
+from .constants import TIME_UNITS
 
 
 class TimeSeries:

@@ -1,7 +1,7 @@
 import pytest
 from itertools import accumulate
 
-from mckit.fispact.irradiation_profile import TimeSeries, IrradiationProfile, \
+from r2s_rfda.irradiation_profile import TimeSeries, IrradiationProfile, \
     irradiation_SA2
 
 
