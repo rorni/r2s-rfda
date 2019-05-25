@@ -1,0 +1,8 @@
+<< Condense decay data >>
+CLOBBER
+SPEK
+GETDECAY 1
+FISPACT
+* CONDENSE
+END
+* END OF RUN

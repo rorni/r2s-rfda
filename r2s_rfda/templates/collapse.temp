@@ -1,0 +1,8 @@
+<< collapse cross section data >>
+CLOBBER
+GRPCONVERT {nestrc} 709
+GETXS {libxs} 709
+FISPACT
+* COLLAPSE
+END
+* END OF RUN
