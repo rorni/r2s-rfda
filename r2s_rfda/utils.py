@@ -1,6 +1,11 @@
 import pickle
 from pathlib import Path
 
+from .constants import TIME_UNITS
+
+
+__all__ = ['adjust_time']
+
 
 def save_config(cwd, **conf_params):
     """Saves activation task configuration.
@@ -65,3 +70,14 @@ def fetch_folder(folder, read_only=False):
         else:
             path.mkdir()
     return path
+
+
+_sort_units = ('YEARS', 'DAYS', 'HOURS', 'MINS', 'SECS')
+
+
+def adjust_time(time):
+        for unit in _sort_units:
+            d = time / TIME_UNITS[unit]
+            if d >= 1:
+                return d, unit
+        return time, 'SECS'
