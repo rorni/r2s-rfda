@@ -4,7 +4,7 @@ import argparse
 import configparser
 
 
-def load_task_config(filename):
+def load_task(filename):
     """Loads task configuration.
     
     Parameters
@@ -31,6 +31,7 @@ def load_task_config(filename):
 
 
 def arg_parser():
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(prog='R2S method')
     subparsers = parser.add_subparsers(dest='action')
 
@@ -73,7 +74,7 @@ def arg_parser():
 def main():
     command = arg_parser()
     if command['action'] == 'prepare':
-        model, datalib, fispact = load_task_config(command['config'])
+        model, datalib, fispact = load_task(command['config'])
     elif command['action'] == 'run':
         pass
     elif command['action'] == 'fetch':

@@ -2,6 +2,7 @@
 import re
 from pathlib import Path
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pkg_resources import resource_filename
 
 import numpy as np
@@ -121,46 +122,40 @@ def create_arbflux_text(ebins, flux):
     return ''.join(text)
 
 
-def print_material(material, volume, tolerance=1.e-8):
-    """Produces FISPACT description of the material.
+def run_tasks(folder, verbose=True, threads=1):
+    """Runs FISPACT calculations.
 
     Parameters
     ----------
-    material : Material
-        Material to be irradiated.
-    volume : float
-        Volume of the material.
-    tolerance : float
-        Relative tolerance to believe that isotopes have natural abundance.
-        If None - no checking is performed and FUEL keyword is used.
-
-    Returns
-    -------
-    text : list[str]
-        List of words.
+    folder : str or Path
+        Folder with files to run.
+    verbose : bool
+        Output verbosity. Default: True.
+    threads : int
+        The number of threads to execute.
     """
-    text = ['DENSITY {0}'.format(material.density)]
-    composition = []
-    if tolerance is not None:
-        nat_comp = material.composition.natural(tolerance)
-        if nat_comp is not None:
-            mass = volume * material.density / 1000    # Because mass must be specified in kg.
-            for e in nat_comp.elements():
-                composition.append((e, nat_comp.get_weight(e) * 100))
-            text.append('MASS {0:.5} {1}'.format(mass, len(composition)))
-    else:
-        nat_comp = None
+    # TODO: Insert loading of configuration
 
-    if tolerance is None or nat_comp is None:
-        exp_comp = material.composition.expand()
-        tot_atoms = volume * material.concentration
-        # print('tot atoms ', tot_atoms, 'vol ', volume, 'conc ', material.concentration)
-        for e in exp_comp.elements():
-            composition.append((e, exp_comp.get_atomic(e) * tot_atoms))
-        text.append('FUEL  {0}'.format(len(composition)))
+    condense_name, condense_files = condense_task
+    run_fispact(condense_name, condense_files, cwd=cwd, verbose=verbose)
 
-    for e, f in sorted(composition, key=lambda x: -x[1]):
-        # print(e, f)
-        text.append('  {0:2s}   {1:.5e}'.format(e.fispact_repr(), f))
-    return text
+    with ThreadPoolExecutor(max_workers=threads) as pool:
+        pool.map(partial(_run_case, verbose=verbose), flux_tasks)
 
+
+def _run_case(case_todo, verbose=True):
+    """Runs FISPACT calculations for the specific case.
+
+    Parameters
+    ----------
+    case_todo : dict
+        A dictionary of tasks to do in the case. It contains following keys:
+        'cwd' - working directory of the case, 'task_list' - a list of tuples
+        (task_file_name, task_files).
+    verbose : bool
+        Turns on verbose output. Default: True.
+    """
+    cwd = case_todo['cwd']
+    task_list = case_todo['task_list']
+    for input_file, files in task_list:
+        run_fispact(input_file, files=files, cwd=cwd, verbose=verbose)
