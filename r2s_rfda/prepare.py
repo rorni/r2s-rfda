@@ -20,9 +20,8 @@ def calculate_volumes(model, mesh, min_volume):
 
     Returns
     -------
-    volumes : dict
-        A dictionary of cell volumes inside the mesh. c, i, j, k -> V.
-        c - cell name, i, j, k - voxel indices.
+    volumes : SparseData
+        Cell volumes. 
     """
     raise NotImplementedError
 
@@ -39,10 +38,10 @@ def get_materials(model, cells):
 
     Returns
     -------
-    materials : dict
-        A dictionary of MCNP materials. cell_name -> material.
-    densities : dict
-        A dictionary of cell densities. cell_name -> density [g/cc].
+    materials : SparseData
+        Cell-material matrix.
+    densities : SparseData
+        Cell densities.
     """
     raise NotImplementedError
 
