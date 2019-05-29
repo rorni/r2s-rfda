@@ -8,7 +8,7 @@ class SparseData:
 
     Parameters
     ----------
-    labels : list[str]
+    axes : list[str]
         A list of axis labels.
     bins : dict[list]
         A dictionary of axis bins. key - is axis label. Value - bin boundaries
@@ -26,7 +26,7 @@ class SparseData:
     multiply(data)
         Element-wise multiplication of the two arrays. 
     """
-    def __init__(self, labels, bins, shape, data):
+    def __init__(self, axes, bins, shape, data):
         pass
 
     def tensor_dot(self, data):
@@ -68,5 +68,18 @@ class SparseData:
         """
         raise NotImplementedError
 
-    
+    @property
+    def axes(self):
+        raise NotImplementedError
 
+    @property
+    def bins(self):
+        raise NotImplementedError
+
+    @property
+    def data(self):
+        raise NotImplementedError
+
+    @property
+    def shape(self):
+        raise NotImplementedError
