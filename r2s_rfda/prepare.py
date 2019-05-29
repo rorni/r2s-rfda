@@ -6,6 +6,10 @@ from mckit.parser.meshtal_parser import read_meshtal
 import utils
 
 
+def create_tasks(model_name, fmesh_name, tally_name):
+    pass
+
+
 def calculate_volumes(model, mesh, min_volume):
     """Calculates volumes of model cells in every mesh voxel.
 
