@@ -2,6 +2,9 @@
 
 import argparse
 import configparser
+from pathlib import Path
+
+from . import prepare, run, fetch, source
 
 
 def load_task(filename):
@@ -52,7 +55,7 @@ def arg_parser():
 
     # run arguments
     parser_run.add_argument(
-        '-t', '--tasks', nargs='?', type=int, default=1, 
+        '-t', '--threads', nargs='?', type=int, default=1, 
         help='the number of worker processes to be run'
     )
 
@@ -75,8 +78,12 @@ def main():
     command = arg_parser()
     if command['action'] == 'prepare':
         model, datalib, fispact = load_task(command['config'])
+
     elif command['action'] == 'run':
-        pass
+        path = Path(command['folder'])
+        threads = command['threads']
+        run.run_tasks(path, threads=threads)
+        
     elif command['action'] == 'fetch':
         pass
     elif command['action'] == 'source':

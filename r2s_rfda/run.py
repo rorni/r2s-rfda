@@ -3,7 +3,6 @@
 import re
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 
 from . import utils
 
@@ -12,7 +11,7 @@ class FispactError(Exception):
     pass
 
 
-def run_fispact(input_file, files='files', cwd=None, verbose=True):
+def run_fispact(input_file, files='files', cwd=None, verbose=False):
     """Runs FISPACT code.
 
     If run ends with errors, then FispactError exception is raised.
@@ -55,7 +54,7 @@ def check_fispact_status(text):
         raise FispactError(match.group(0))
 
 
-def run_tasks(folder, verbose=True, threads=1):
+def run_tasks(folder, verbose=False, threads=1):
     """Runs FISPACT calculations.
 
     Parameters
@@ -65,30 +64,24 @@ def run_tasks(folder, verbose=True, threads=1):
     verbose : bool
         Output verbosity. Default: True.
     threads : int
-        The number of threads to execute.
+        The number of threads to execute. Default: 1.
     """
-    # TODO: Insert loading of configuration
-
-    condense_name, condense_files = condense_task
-    run_fispact(condense_name, condense_files, cwd=cwd, verbose=verbose)
+    config = utils.load_config(folder)
+    task_list = config['task_list']
 
     with ThreadPoolExecutor(max_workers=threads) as pool:
-        pool.map(partial(_run_case, verbose=verbose), flux_tasks)
+        pool.map(run_case, task_list)
 
 
-def _run_case(case_todo, verbose=True):
+def run_case(task_case):
     """Runs FISPACT calculations for the specific case.
 
     Parameters
     ----------
-    case_todo : dict
-        A dictionary of tasks to do in the case. It contains following keys:
-        'cwd' - working directory of the case, 'task_list' - a list of tuples
-        (task_file_name, task_files).
-    verbose : bool
-        Turns on verbose output. Default: True.
+    task_case : tuple
+        A tuple of tasks to be executed for one particular case.
+        (cwd, tasks) - cwd - working directory (Path), tasks - list of tasks.
     """
-    cwd = case_todo['cwd']
-    task_list = case_todo['task_list']
-    for input_file, files in task_list:
-        run_fispact(input_file, files=files, cwd=cwd, verbose=verbose)
+    cwd, tasks = task_case
+    for input_file in tasks:
+        run_fispact(input_file, cwd=cwd)
