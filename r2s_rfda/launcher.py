@@ -149,5 +149,5 @@ def main():
             gamma_data = fetch.load_gamma(path)
             sd = command['distribution']
             sdef = source.create_source(gamma_data, start_distr=sd)
-            # save source
-            pass
+            with open(path / 'sdef.i', 'w') as f:
+                f.write(sdef)
