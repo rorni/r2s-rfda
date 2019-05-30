@@ -111,35 +111,43 @@ def arg_parser():
 
 def main():
     command = arg_parser()
+    path = Path(command['folder'])
     if command['action'] == 'prepare':
-        model, datalib, fispact = load_task(command['config'])
-        # read model
-        # read fmesh
-        # read template
-
-        # calculate volumes
-        # select materials & densities
-        # calculate masses
         # create folder
-
-        if fispact['approach'] == 'full':
-            # prepare full mesh cases (fluxes, masses, template)
-            pass
-        elif fispact['approach'] == 'simple':
-            # prepare simple mesh cases (F0, M0, ebins, materials, template)
-            # prepare adjustment coefficients.
-            pass
-        else:
-            # unknown approach
-            pass
-        # save config
+        path.mkdir()
+        casepath = Path(path / 'cases')
+        casepath.mkdir()
         
-    elif command['action'] == 'run':
-        path = Path(command['folder'])
-        threads = command['threads']
-        run.run_tasks(path, threads=threads)
+        model, datalib, fispact = load_task(command['config'])
+        try:
+            config = prepare.create_tasks(
+                casepath, 
+                mcnp_name=model[''], 
+                fmesh_name=model[''],
+                tally_name=model[''],
+                libs=datalib,
+                libxs=fispact['libxs'],
+                inventory=fispact['inventory'],
+                approach=fispact['approach'],
+                norm_flux=fispact['norm_flux']
+            )
+        except:
+            pass
+        save_config(path, **config)
+        
+    else:
+        config = load_config(path)
+        if command['action'] == 'run':
+            threads = command['threads']
+            task_list = config['task_list']
+            run.run_tasks(task_list, threads=threads)
 
-    elif command['action'] == 'fetch':
-        pass
-    elif command['action'] == 'source':
-        pass
+        elif command['action'] == 'fetch':
+            fetch.collect(path, config)
+            
+        elif command['action'] == 'source':
+            gamma_data = fetch.load_gamma(path)
+            sd = command['distribution']
+            sdef = source.create_source(gamma_data, start_distr=sd)
+            # save source
+            pass

@@ -4,6 +4,8 @@ import re
 from pkg_resources import resource_filename
 import numpy as np
 
+from . import template
+
 
 def read_template(temp_name):
     with open(resource_filename(__name__, 'templates/' + temp_name)) as f:

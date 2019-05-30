@@ -4,8 +4,23 @@ from mckit import read_mcnp
 from mckit.parser.meshtal_parser import read_meshtal
 
 
-def create_tasks(model_name, fmesh_name, tally_name):
-    pass
+def create_tasks(path, **kwargs):
+    """Creates tasks for fispact.
+
+    Parameters
+    ----------
+    path : Path
+        Path, where tasks must be created.
+    **kwargs : dict
+        A dictionary of input data.
+    
+    Returns
+    -------
+    config : dict
+        Task configuration.
+    """
+    # 
+    raise NotImplementedError
 
 
 def calculate_volumes(model, mesh, min_volume):
@@ -99,4 +114,19 @@ def create_simple_tasks(path, template, ebins, materials, flux, mass):
     """
     raise NotImplementedError
 
+
+def create_lib_text(lib_dict):
+    """Creates lib text.
+
+    Parameters
+    ----------
+    lib_dict : dict
+        A dictionary of libraries. lib_name -> path.
+    
+    Returns
+    -------
+    lib_text : str
+        A text to be inserted into files file.
+    """
+    raise NotImplementedError
 
