@@ -1,0 +1,10 @@
+# Data libraries
+ind_nuc  ../../TENDL2014data/tendl14_decay12_index
+xs_endf  ../../TENDL2014data/tal2014-n/gxs-709
+
+# collapsed cross section data (in and out)
+collapxi  COLLAPX
+collapxo  COLLAPX
+
+# condensed decay and fission data (in and out)
+arrayx  ARRAYX
