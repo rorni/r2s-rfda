@@ -18,16 +18,19 @@ inventory_temp = None
 flux_coeffs = None
 
 
-def create_scenario_template(input):
+def create_scenario_template(input, norm_flux):
     """Creates new template with replaced fluxes in irradiation scenario.
 
     New template is stored in module local variable since the template will not
-    be changed for particular task.
+    be changed for particular task. The irradiation profile is also stored at
+    module level.
 
     Parameters
     ----------
     input : str
         Input template of inventory input file.
+    norm_flux : float
+        Flux value for normalization.
     """
     global inventory_temp
     global flux_coeffs
@@ -68,30 +71,22 @@ def fispact_collapse(libxs, nestrc):
     raise NotImplementedError
 
 
-def fispact_inventory(flux):
-    pass
-
-
-def create_fispact_input(name, cwd, template, *args, **kwargs):
-    """Creates fispact input file from the template.
+def fispact_inventory(flux, material):
+    """Creates text of inventory input file.
 
     Parameters
     ----------
-    name : str
-        Name of FISPACT input file to be created.
-    cwd : Path
-        Working directory. In this directory files will be created. The folder
-        must exist.
-    template : str
-        Template string with format specifiers. 
-    *args : list
-        A list of positional symbols that are to be inserted into template.
-    **kwargs : dict
-        A dictionary of named symbols that are to be inserted into template.
+    flux : float
+        Nominal flux value for the scenario at particular point.
+    material : str
+        Material description.
+
+    Returns
+    -------
+    text : str
+        Text of inventory file.
     """
-    text = template.format(*args, **kwargs)
-    with open(cwd / name, mode='w') as f:
-        f.write(text)
+    raise NotImplementedError
 
 
 def create_arbflux_text(ebins, flux):
