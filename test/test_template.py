@@ -25,8 +25,9 @@ def test_create_scenario_template(input, norm_flux, templ, coeffs):
 
 
 @pytest.mark.parametrize('datalib, answer', [
-    ('ind_nuc  ../../TENDL2014data/tendl14_decay12_index\nxs_endf  ../../TENDL2014data/tal2014-n/gxs-709',
-     'files_1')
+    ({'ind_nuc': '../../TENDL2014data/tendl14_decay12_index',
+      'xs_endf': '../../TENDL2014data/tal2014-n/gxs-709',
+      'clear': '../../decay/clear_2012'}, 'files_1')
 ])
 def test_fispact_files(datalib, answer):
     answer = load_file(answer)
@@ -53,8 +54,11 @@ def test_fispact_inventory(flux, material, answer):
 
 
 @pytest.mark.parametrize('ebins, flux, answer', [
-
+    ([1.e-11, 1.0, 10.0], [1, 90], 'arb_flux_1'),
+    ([1.1e-11, 2.5e-7, 1.4e-3, 2.46e-1, 3.8, 4.6, 7.8, 14.1], 
+     [3.6e+5, 2.3e+2, 6.7e+8, 1.2e+6, 7.8e+7, 9.4e+9, 2.87e+3], 'arb_flux_2')
 ])
 def test_fispact_arbflux(ebins, flux, answer):
+    answer = load_file(answer)
     result = template.create_arbflux_text(ebins, flux)
     assert result == answer

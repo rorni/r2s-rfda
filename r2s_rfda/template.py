@@ -43,14 +43,19 @@ def fispact_files(datalib):
 
     Parameters
     ----------
-    datalib : str
-        Text of data libraries.
+    datalib : dict
+        A dictionary of libraries to be used in FISPACT calculations.
     
     Returns
     -------
     text : str
         Text of files file.
     """
+    # datalib - словарь названий библиотек, и путей к ним.
+    # Надо эти записи соединить в строки. Каждая библиотека на новой строке.
+    # Причем пробелы между названием библиотеки и путем надо вставить так, 
+    # чтобы выровнить пути. Между самым длинным названием библиотеки и ее 
+    # путем должно быть два пробела. См. соответствующий тест.
     raise NotImplementedError
 
 
