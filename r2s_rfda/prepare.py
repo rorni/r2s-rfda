@@ -3,8 +3,6 @@
 from mckit import read_mcnp
 from mckit.parser.meshtal_parser import read_meshtal
 
-import utils
-
 
 def create_tasks(model_name, fmesh_name, tally_name):
     pass

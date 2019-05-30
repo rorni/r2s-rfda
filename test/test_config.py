@@ -4,7 +4,7 @@ import pytest
 from pathlib import Path
 import shutil
 
-from r2s_rfda import utils
+from r2s_rfda import launcher
 
 
 root = Path(__file__).resolve().parent
@@ -21,8 +21,8 @@ def test_config(folder, config):
     path = root / folder
     path.mkdir()
 
-    utils.save_config(path, **config)
+    launcher.save_config(path, **config)
 
-    load_conf = utils.load_config(path)
+    load_conf = launcher.load_config(path)
     assert load_conf == config
     shutil.rmtree(path)

@@ -4,8 +4,6 @@ import re
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
-from . import utils
-
 
 class FispactError(Exception):
     pass
@@ -54,21 +52,18 @@ def check_fispact_status(text):
         raise FispactError(match.group(0))
 
 
-def run_tasks(folder, verbose=False, threads=1):
+def run_tasks(task_list, verbose=False, threads=1):
     """Runs FISPACT calculations.
 
     Parameters
     ----------
-    folder : str or Path
-        Folder with files to run.
+    task_list : list
+        List of tasks.
     verbose : bool
         Output verbosity. Default: True.
     threads : int
         The number of threads to execute. Default: 1.
     """
-    config = utils.load_config(folder)
-    task_list = config['task_list']
-
     with ThreadPoolExecutor(max_workers=threads) as pool:
         pool.map(run_case, task_list)
 

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import pickle
 import configparser
 from pathlib import Path
 
@@ -31,6 +32,40 @@ def load_task(filename):
     data_conf = dict(conf_par['DATALIB'])
     fispact_conf = dict(conf_par['FISPACT'])
     return model_conf, data_conf, fispact_conf
+
+
+def save_config(cwd, **conf_params):
+    """Saves activation task configuration.
+
+    Parameters
+    ----------
+    cwd : Path
+        Activation task working directory.
+    **conf_params : dict
+        An array of keyword-value pairs to be saved.
+    """
+    filename = cwd / 'settings.cfg'
+    with open(filename, 'bw') as f:
+        pickle.dump(conf_params, f, pickle.HIGHEST_PROTOCOL)
+
+
+def load_config(cwd):
+    """Loads activation task configuration.
+
+    Parameters
+    ----------
+    cwd : Path
+        Activation task working directory.
+
+    Returns
+    -------
+    conf_params : dict
+        A dictionary of key-value pairs.
+    """
+    filename = cwd / 'settings.cfg'
+    with open(filename, 'br') as f:
+        conf_params = pickle.load(f)
+    return conf_params
 
 
 def arg_parser():
@@ -78,12 +113,32 @@ def main():
     command = arg_parser()
     if command['action'] == 'prepare':
         model, datalib, fispact = load_task(command['config'])
+        # read model
+        # read fmesh
+        # read template
 
+        # calculate volumes
+        # select materials & densities
+        # calculate masses
+        # create folder
+
+        if fispact['approach'] == 'full':
+            # prepare full mesh cases (fluxes, masses, template)
+            pass
+        elif fispact['approach'] == 'simple':
+            # prepare simple mesh cases (F0, M0, ebins, materials, template)
+            # prepare adjustment coefficients.
+            pass
+        else:
+            # unknown approach
+            pass
+        # save config
+        
     elif command['action'] == 'run':
         path = Path(command['folder'])
         threads = command['threads']
         run.run_tasks(path, threads=threads)
-        
+
     elif command['action'] == 'fetch':
         pass
     elif command['action'] == 'source':
