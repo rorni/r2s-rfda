@@ -4,8 +4,6 @@ import re
 from pkg_resources import resource_filename
 import numpy as np
 
-from . import template
-
 
 def read_template(temp_name):
     with open(resource_filename(__name__, 'templates/' + temp_name)) as f:
@@ -20,7 +18,7 @@ inventory_temp = None
 flux_coeffs = None
 
 
-def create_scenario_template(input, norm_flux):
+def create_scenario_template(inptemp, norm_flux):
     """Creates new template with replaced fluxes in irradiation scenario.
 
     New template is stored in module local variable since the template will not
@@ -29,13 +27,14 @@ def create_scenario_template(input, norm_flux):
 
     Parameters
     ----------
-    input : str
+    inptemp : str
         Input template of inventory input file.
     norm_flux : float
         Flux value for normalization.
     """
     global inventory_temp
     global flux_coeffs
+
     raise NotImplementedError
 
 
@@ -70,7 +69,7 @@ def fispact_collapse(libxs, nestrc):
     text : str
         Text of collapse file.
     """
-    raise NotImplementedError
+    return collapse_temp.format(nestrc=nestrc, libxs=libxs)
 
 
 def fispact_inventory(flux, material):

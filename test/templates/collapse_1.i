@@ -1,4 +1,4 @@
-< collapse cross section data >>
+<< collapse cross section data >>
 CLOBBER
 GRPCONVERT 175 709
 GETXS 1 709

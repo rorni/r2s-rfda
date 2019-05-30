@@ -3,6 +3,8 @@
 from mckit import read_mcnp
 from mckit.parser.meshtal_parser import read_meshtal
 
+from . import template
+
 
 def create_tasks(path, **kwargs):
     """Creates tasks for fispact.
