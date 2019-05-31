@@ -63,16 +63,13 @@ def fispact_files(datalib):
     text : str
         Text of files file.
     """
-    lens = []
-    for k, v in datalib.items():
-        lens.append(len(k))
-    # for name in order:
-    
-    # datalib - словарь названий библиотек, и путей к ним.
-    # Надо эти записи соединить в строки. Каждая библиотека на новой строке.
-    # Причем пробелы между названием библиотеки и путем надо вставить так, 
-    # чтобы выровнить пути. Между самым длинным названием библиотеки и ее 
-    # путем должно быть два пробела. См. соответствующий тест.
+    max_len = max(map(len, datalib.keys()))
+    lib_str = []
+    for name in order:
+        if name in datalib.keys():
+            spaces = ' ' * (max_len - len(name) + 2)
+            lib_str.append(name + spaces + datalib[name])
+    return files_temp.format(datalib='\n'.join(lib_str))
 
 
 def fispact_collapse(libxs, nestrc):
