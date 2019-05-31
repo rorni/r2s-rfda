@@ -105,7 +105,8 @@ def fispact_inventory(flux, material):
     text : str
         Text of inventory file.
     """
-    raise NotImplementedError
+    fluxes = map('{0:.4e}'.format, flux * flux_coeffs)
+    return inventory_temp.format(*fluxes, material=material)
 
 
 def create_arbflux_text(ebins, flux):
