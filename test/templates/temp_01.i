@@ -5,13 +5,16 @@ GETXS 0
 GETDECAY 0
 FISPACT
 * Test template for template
-{material}
+DENSITY 2.0
+FUEL 2
+  Li6  8.5E+24
+  Li7  1.5E+24
 << -----irradiation phase----- >>
 FLUX 2.0000e+10
 TIME 2 YEARS SPEC
 FLUX 1.0000e+11
 TIME 10 YEARS SPEC
-FLUX  0
+FLUX 0
 TIME 0.667 YEARS SPEC
 FLUX 1.0000e+09
 TIME 1.330 YEARS SPEC

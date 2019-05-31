@@ -5,13 +5,18 @@ GETXS 0
 GETDECAY 0
 FISPACT
 * Test template for template
-{material}
+MASS 6.0 5
+  Fe 65.255
+  Cr 18.0
+  Ni 12.015
+  Mo 2.4
+  Mn 1.8
 << -----irradiation phase----- >>
 FLUX 2.0000e+09
 TIME 2 YEARS SPEC
 FLUX 1.0000e+10
 TIME 10 YEARS SPEC
-FLUX  0
+FLUX 0
 TIME 0.667 YEARS SPEC
 FLUX 1.0000e+08
 TIME 1.330 YEARS SPEC
