@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sparse
+import numpy as np
 
 
 class SparseData:
@@ -26,13 +27,21 @@ class SparseData:
     multiply(data)
         Element-wise multiplication of the two arrays. 
     """
-    def __init__(self, axes, bins, shape, data):
-        self._axes = axes
-        self._bins = bins
-        self._shape = shape
+    def __init__(self, axes, labels, data):
+        if len(axes) != len(labels):
+            raise ValueError('Inconsistent axes and labels')
+        self._axes = tuple(axes)
+        self._labels = tuple(tuple(x) for x in labels)
         if isinstance(data, dict):
-            pass
-        elif isinstance(data, shape.COO):
+            enum_rules = create_enum_rules(labels)
+            coords = np.empty((len(axes), len(data.items())))
+            spdata = np.empty(len(data.items()))
+            for i, (k, v) in enumerate(data.items()):
+                coords[:, i] = create_index(k, enum_rules)
+                spdata[i] = v
+            shape = tuple(len(l) for l in labels)
+            self._data = sparse.COO(coords, data=spdata, shape=shape)
+        elif isinstance(data, sparse.COO):
             self._data = data
         else:
             raise TypeError('Unknown data type. data must be either dict or SparseData instance')
@@ -55,7 +64,30 @@ class SparseData:
         result : SparseData
             Tensor dot product.
         """
-        raise NotImplementedError
+        convolution_labels = set(self.axes).intersection(data.axes)
+        si = self.find_indices(convolution_labels)
+        di = data.find_indices(convolution_labels)
+        conv_data = sparse.tensordot(self.data, data.data, axes=(si, di))
+        conv_axes = []
+        conv_labels = []
+        for i, lab in enumerate(self.axes):
+            if i not in si:
+                conv_axes.append(lab)
+                conv_labels.append(self.labels[i])
+        for i, lab in enumerate(data.axes):
+            if i not in di:
+                conv_axes.append(lab)
+                conv_labels.append(data.labels[i])
+        return SparseData(conv_axes, conv_labels, conv_data)
+
+    def find_indices(self, labels):
+        labels = labels.copy()
+        indices = []
+        for i, ax in enumerate(self._axes):
+            if ax in labels:
+                indices.append(i)
+                labels.remove(ax)
+        return tuple(indices)
 
     def multiply(self, data):
         """Do element-wise multiplication of two tensors.
@@ -74,20 +106,59 @@ class SparseData:
         result : SparseData
             Element-wise multiplication of two tensors.
         """
-        raise NotImplementedError
+        sset = set(self.axes)
+        dset = set(data.axes)
+        if sset < dset:
+            return data.multiply(self)
+        elif sset >= dset:
+            diff = sset.difference(dset)
+            s_ind = enumerate_labels(self.axes)
+            dshape = [len(l) for l in data.labels]
+            daxes = list(data.axes)
+            dlabels = list(data.labels)
+            for dl in diff:
+                dshape.insert(0, len(self.labels[s_ind[dl]]))
+                daxes.insert(0, dl)
+                dlabels.insert(0, self.labels[s_ind[dl]])
+            if len(dshape) > len(data.axes):
+                data_arr = data._data.broadcast_to(dshape)
+            else:
+                data_arr = data._data
+            d_ind = enumerate_labels(daxes)
+            pert = [s_ind[l] for l in daxes]
+            new_data = self._data.transpose(pert) * data_arr
+            print(daxes, dlabels)
+            return SparseData(daxes, dlabels, new_data)
+        else: 
+            raise ValueError('Incorrect shapes.')
+
 
     @property
     def axes(self):
-        raise NotImplementedError
+        """Names of axes."""
+        return self._axes
 
     @property
-    def bins(self):
-        raise NotImplementedError
+    def labels(self):
+        """Axes labels."""
+        return self._labels
 
     @property
     def data(self):
-        raise NotImplementedError
+        """Data itself."""
+        return self._data
 
-    @property
-    def shape(self):
-        raise NotImplementedError
+
+def enumerate_labels(labels):
+    return {label: i for i, label in enumerate(labels)}
+
+def create_enum_rules(labels):
+    enum_rules = []
+    for label_list in labels:
+        rule = enumerate_labels(label_list)
+        enum_rules.append(rule)
+    return enum_rules
+
+
+def create_index(label, rule):
+    return [rule[i][l] for i, l in enumerate(label)]
