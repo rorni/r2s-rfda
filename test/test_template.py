@@ -51,15 +51,15 @@ def temp():
     template.create_scenario_template(inp, 1.0e+10)
 
 
-@pytest.mark.parametrize('flux, material, answer', [
-    (1.0e+10, , 'temp_01.i'),
-    (2.0e+10, , 'temp_02.i'),
-    (1.0e+11, , 'temp_03.i'),
-    (1.0e+09, , 'temp_04.i')
-])
-def test_fispact_inventory(temp, flux, material, answer):
-    result = template.fispact_inventory(flux, material)
-    assert result == answer
+# @pytest.mark.parametrize('flux, material, answer', [
+#     (1.0e+10, , 'temp_01.i'),
+#     (2.0e+10, , 'temp_02.i'),
+#     (1.0e+11, , 'temp_03.i'),
+#     (1.0e+09, , 'temp_04.i')
+# ])
+# def test_fispact_inventory(temp, flux, material, answer):
+#     result = template.fispact_inventory(flux, material)
+#     assert result == answer
 
 
 @pytest.mark.parametrize('ebins, flux, answer', [
