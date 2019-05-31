@@ -17,6 +17,11 @@ condense_temp = read_template('condense.temp')
 inventory_temp = None
 flux_coeffs = None
 
+order = [
+    'ind_nuc', 'xs_endf', 'xs_endfb', 'prob_tab', 'fy_endf', 'sf_endf', 'dk_endf',
+    'hazards', 'clear', 'a2data', 'absorp'
+]
+
 
 def create_scenario_template(inptemp, norm_flux):
     """Creates new template with replaced fluxes in irradiation scenario.
@@ -34,8 +39,15 @@ def create_scenario_template(inptemp, norm_flux):
     """
     global inventory_temp
     global flux_coeffs
-
-    raise NotImplementedError
+    pat = re.compile('FLUX +[0-9]+.[0-9]+E.[0-9]+')
+    res = pat.split(inptemp)
+    mats = pat.findall(inptemp)
+    flux_coeffs = []
+    for i, mat in enumerate(mats):
+        res.insert(2*i+1, 'FLUX {{{0}}}'.format(i))
+        flux_coeffs.append(float(mat[4:]) / norm_flux)
+    inventory_temp = ''.join(res)
+    flux_coeffs = np.array(flux_coeffs)
 
 
 def fispact_files(datalib):
@@ -51,12 +63,13 @@ def fispact_files(datalib):
     text : str
         Text of files file.
     """
+    # for name in order:
+    
     # datalib - словарь названий библиотек, и путей к ним.
     # Надо эти записи соединить в строки. Каждая библиотека на новой строке.
     # Причем пробелы между названием библиотеки и путем надо вставить так, 
     # чтобы выровнить пути. Между самым длинным названием библиотеки и ее 
     # путем должно быть два пробела. См. соответствующий тест.
-    raise NotImplementedError
 
 
 def fispact_collapse(libxs, nestrc):
@@ -65,7 +78,7 @@ def fispact_collapse(libxs, nestrc):
     Parameters
     ----------
     libxs : int
-        If -1 - to use binary library, if +1 - use text library.
+        If -1 - to use binary library, if 1 - use text library.
     nestrc : int
         The number of energy groups in neutron spectrum.
     
