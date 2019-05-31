@@ -52,10 +52,11 @@ def temp():
 
 
 @pytest.mark.parametrize('flux, material, answer', [
-    (1.0e+10, , 'temp_01.i'),
-    (2.0e+10, , 'temp_02.i'),
-    (1.0e+11, , 'temp_03.i'),
-    (1.0e+09, , 'temp_04.i')
+    (1.0e+10, 'DENSITY 2.0\nFUEL 2\n  Li6  8.5E+24\n  Li7  1.5E+24', 'temp_01.i'),
+    (2.0e+10, 'DENSITY 3.5\nFUEL 2\n  Fe56  7.5E+24\n  Co60  3.5E+24', 'temp_02.i'),
+    (1.0e+11, 'DENSITY 7.8\nMASS 1.0 7\n  Fe 65.255\n  Cr 18.0\n  Ni 12.015\n'
+        '  Mo 2.4\n  Mn 1.8\n  Si 0.5\n  C  0.03', 'temp_03.i'),
+    (1.0e+09, 'MASS 6.0 5\n  Fe 65.255\n  Cr 18.0\n  Ni 12.015\n  Mo 2.4\n  Mn 1.8', 'temp_04.i')
 ])
 def test_fispact_inventory(temp, flux, material, answer):
     result = template.fispact_inventory(flux, material)
