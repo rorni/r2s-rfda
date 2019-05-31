@@ -27,7 +27,15 @@ class SparseData:
         Element-wise multiplication of the two arrays. 
     """
     def __init__(self, axes, bins, shape, data):
-        pass
+        self._axes = axes
+        self._bins = bins
+        self._shape = shape
+        if isinstance(data, dict):
+            pass
+        elif isinstance(data, shape.COO):
+            self._data = data
+        else:
+            raise TypeError('Unknown data type. data must be either dict or SparseData instance')
 
     def tensor_dot(self, data):
         """Tensor dot product with other SparseData object.
