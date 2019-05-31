@@ -136,7 +136,7 @@ def create_arbflux_text(ebins, flux):
         text.append('{0:.6e}'.format(e))
         text.append(s)
     text[-1] = '\n'
-    text.append('1\n')
+    text.append('1.0\n')
     text.append('total flux={0:.6e}'.format(np.sum(flux)))
 
     return ''.join(text)

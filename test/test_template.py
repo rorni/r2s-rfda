@@ -71,4 +71,7 @@ def test_fispact_inventory(temp, flux, material, answer):
 def test_fispact_arbflux(ebins, flux, answer):
     answer = load_file(answer)
     result = template.create_arbflux_text(ebins, flux)
+    print(result)
+    print('----')
+    print(answer)
     assert result == answer
