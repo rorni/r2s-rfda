@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from collections import deque
+
 from mckit import read_mcnp
 from mckit.parser.meshtal_parser import read_meshtal
 
@@ -43,6 +45,35 @@ def calculate_volumes(model, mesh, min_volume):
         Cell volumes. 
     """
     raise NotImplementedError
+
+def select_cells(model, box):
+    """Finds all cells that intersect the box.
+
+    Parameters
+    ----------
+    model : Universe
+        The model to be checked.
+    box : Box
+        Box to be checked.
+    
+    Returns
+    -------
+    cells : list
+        A list of selected cells.
+    """
+    cells = []
+    cells_to_check = deque(c for c in model)
+    while len(cells_to_check) > 0:
+        c = cells_to_check.popleft()
+        fill_opt = c.options.get('FILL', None)
+        test = c.shape.test_box(box)
+        if test == -1:
+            continue
+        if fill_opt:
+            
+        elif c.material():
+            cells.append(c)
+    return cells
 
 
 def get_materials(model, cells):
