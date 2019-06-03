@@ -122,9 +122,10 @@ def main():
         try:
             config = prepare.create_tasks(
                 casepath, 
-                mcnp_name=model[''], 
-                fmesh_name=model[''],
-                tally_name=model[''],
+                mcnp_name=model['mcnp'], 
+                fmesh_name=model['fmesh'],
+                tally_name=model['tally'],
+                min_volume=model['minvol'], 
                 libs=datalib,
                 libxs=fispact['libxs'],
                 inventory=fispact['inventory'],
