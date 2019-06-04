@@ -131,7 +131,6 @@ def calculate_volumes(cells, mesh, min_volume):
     return volumes
 
 
-
 def select_cells(model, box):
     """Finds all cells that intersect the box.
 
