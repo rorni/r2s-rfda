@@ -86,6 +86,14 @@ def create_tasks(path, **kwargs):
         F0 = np.max(fmesh._data)
         M0 = masses.data.max()
         ebins = fmesh._ebins
+
+        alpha = data.SparseData(
+            ('n_erg', 'i', 'j', 'k'), 
+            (range(len(ebins) - 1), i_labels, j_labels, k_labels),
+            data.sparse.COO.from_numpy(fmesh._data / F0)
+        )
+        beta = data.SparseData(masses.axes, masses.labels, masses / M0)
+
         mats = {m.name(): m for m in mat_dict.values()}
         task_list = create_simple_tasks(path, ebins, mats, F0, M0)
 
