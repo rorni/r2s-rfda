@@ -242,27 +242,72 @@ def create_full_tasks(path, fmesh, volumes, materials, densities):
         spectrum = fdata[:, i, j, k]
         flux = np.sum(spectrum)
 
-        folder = path / ('case-{0}-{1}-{2}'.format(i, j, k))
-        folder.mkdir()
+        task_item = prepare_folder(
+            path, 'case-{0}-{1}-{2}'.format(i, j, k), ebins, spectrum
+        )
 
-        files = folder / 'files'
-        files.write_text(template.fispact_files())
-        collapse = folder / 'collapse.i'
-        collapse.write_text(template.fispact_collapse())
-        arb_flux = folder / 'arb_flux'
-        arb_flux.write_text(template.create_arbflux_text(ebins, spectrum))
-
-        case_list = ['collapse.i']
         for c, vol in cell_vols.items():
             den = densities[c]
             mat_text = material_description(materials[c], den * vol, density=den)
             inventory_name = 'inventory_{0}.i'.format(c)
-            inventory = folder / inventory_name
-            inventory.write_text(template.fispact_inventory(flux, mat_text))
-            case_list.append(inventory_name)
-        task_list.append((folder, case_list))
+            add_inventory_case(
+                task_item, inventory_name, flux, mat_text
+            )
+        task_list.append(task_item)
         
     return task_list
+
+
+def prepare_folder(path, name, ebins, spectrum):
+    """Prepares folder for FISPACT case.
+
+    Parameters
+    ----------
+    path : Path
+        Path, where tasks must be created.
+    name : str
+        Name of the particular case.
+    ebins : array_like
+        Neutron energy bin boundaries.
+    spectrum : array_like
+        Neutron group spectrum.
+    
+    Returns
+    -------
+    task_item : tuple
+        folder_path, list of tasks to run.
+    """
+    folder = path / name
+    folder.mkdir()
+
+    files = folder / 'files'
+    files.write_text(template.fispact_files())
+    collapse = folder / 'collapse.i'
+    collapse.write_text(template.fispact_collapse())
+    arb_flux = folder / 'arb_flux'
+    arb_flux.write_text(template.create_arbflux_text(ebins, spectrum))
+
+    return folder, ['collapse.i']
+
+
+def add_inventory_case(task_item, name, flux, mat):
+    """Adds new task case to task_item.
+
+    Parameters
+    ----------
+    task_item : tuple
+        folder path, case list.
+    name : str
+        Inventory file name.
+    flux : float
+        Nominal flux value.
+    mat : str
+        Material description.
+    """
+    folder, cases = task_item
+    inventory = folder / name
+    inventory.write_text(template.fispact_inventory(flux, mat))
+    cases.append(name)
 
 
 def create_simple_tasks(path, ebins, materials, flux, mass):
@@ -290,26 +335,20 @@ def create_simple_tasks(path, ebins, materials, flux, mass):
     task_list = []
     nf = len(ebins) - 1
     for i in range(nf):
-        f = np.zeros(nf)
-        f[i] = flux
-        folder = path / ('case-{0}'.format(i))
-        folder.mkdir()
+        spectrum = np.zeros(nf)
+        spectrum[i] = flux
 
-        files = folder / 'files'
-        files.write_text(template.fispact_files())
-        collapse = folder / 'collapse.i'
-        collapse.write_text(template.fispact_collapse())
-        arb_flux = folder / 'arb_flux'
-        arb_flux.write_text(template.create_arbflux_text(ebins, f))
+        task_item = prepare_folder(
+            path, 'case-{0}'.format(i), ebins, spectrum
+        )
 
-        case_list = ['collapse.i']
         for name, mat in materials.items():
             mat_text = material_description(mat, mass)
             inventory_name = 'inventory_{0}.i'.format(name)
-            inventory = folder / inventory_name
-            inventory.write_text(template.fispact_inventory(flux, mat_text))
-            case_list.append(inventory_name)
-        task_list.append((folder, case_list))
+            add_inventory_case(
+                task_item, inventory_name, flux, mat_text
+            )
+        task_list.append(task_item)
 
     return task_list
 
