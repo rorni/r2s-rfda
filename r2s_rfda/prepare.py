@@ -65,13 +65,26 @@ def create_tasks(path, **kwargs):
         vol_dict
     )
 
+    masses = density.tensor_dot(volumes)
+
     # set templates
     with open(kwargs['inventory']) as f:
         text = f.read()
     template.create_scenario_template(text, kwargs['norm_flux'])
-    files_text = template.
+    files_text = template.fispact_files(kwargs['libs'])
+    collapse_text = template.fispact_collapse(kwargs['libxs'], fmesh._data.shape[0])
 
-    raise NotImplementedError
+    # Set configuration
+    config = {}
+
+    # Create input files
+    if kwargs['approach'] == 'full':
+        task_list = create_full_tasks(path, fmesh, masses, mat_dict)
+    elif kwargs['approach'] == 'simple':
+        task_list = create_simple_tasks(path)
+
+    config['task_list'] = task_list
+    return config
 
 
 def calculate_volumes(cells, mesh, min_volume):
@@ -182,15 +195,13 @@ def get_densities(cells):
     return densities
 
 
-def create_full_tasks(path, template, fmesh, masses, materials):
+def create_full_tasks(path, fmesh, masses, materials):
     """Creates fispact tasks.
 
     Parameters
     ----------
     path : Path
         Path, where tasks must be created.
-    template : str
-        Fispact inventory input file template.
     fmesh : FMesh
         Fmesh tally.
     masses : dict
@@ -207,15 +218,13 @@ def create_full_tasks(path, template, fmesh, masses, materials):
     raise NotImplementedError
 
 
-def create_simple_tasks(path, template, ebins, materials, flux, mass):
+def create_simple_tasks(path, ebins, materials, flux, mass):
     """Creates fispact tasks for superposition method.
 
     Parameters
     ----------
     path : Path
         Path, where tasks must be created.
-    template : str
-        Fispact inventory input file template.
     ebins : array_like
         Energy bins.
     materials : dict
