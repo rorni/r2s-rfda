@@ -80,10 +80,11 @@ def create_tasks(path, **kwargs):
 
     # Create input files
     if kwargs['approach'] == 'full':
-        task_list = create_full_tasks(path, fmesh, masses, mat_dict)
+        task_list = create_full_tasks(path, fmesh, vol_dict, mat_dict, den_dict)
     elif kwargs['approach'] == 'simple':
         F0 = np.max(fmesh._data)
         M0 = masses.data.max()
+        ebins = fmesh._ebins
         mats = {m.name(): m for m in mat_dict.values()}
         task_list = create_simple_tasks(path, ebins, mats, F0, M0)
 
@@ -199,7 +200,7 @@ def get_densities(cells):
     return densities
 
 
-def create_full_tasks(path, fmesh, masses, materials):
+def create_full_tasks(path, fmesh, volumes, materials, densities):
     """Creates fispact tasks.
 
     Parameters
@@ -208,10 +209,12 @@ def create_full_tasks(path, fmesh, masses, materials):
         Path, where tasks must be created.
     fmesh : FMesh
         Fmesh tally.
-    masses : dict
-        Masses of cells inside each voxel. c, i, j, k -> mass.
+    volumes : dict
+        A dictionary of cell volumes in each voxel. c, i, j, k -> volume.
     materials : dict
         Dictionary of materials of every cell. cell_name -> material.
+    densities : dict
+        A dictionary of cell densities of every cell. cell_name -> density.
     
     Returns
     -------
@@ -220,7 +223,37 @@ def create_full_tasks(path, fmesh, masses, materials):
         (case_folder_name, [inventory_names])
     """
     task_list = []
+    ebins = fmesh._ebins
+    fdata = fmesh._data
+    spatial_to_cell = defaultdict(list)
+    for (c, i, j, k), vol in volumes.items():
+        spatial_to_cell[(i, j, k)].append((c, vol))
+    
+    for (i, j, k), cell_vols in spatial_to_cell.items():
+        spectrum = fdata[:, i, j, k]
+        flux = np.sum(spectrum)
 
+        folder = path / ('case-{0}-{1}-{2}'.format(i, j, k))
+        folder.mkdir()
+
+        files = folder / 'files'
+        files.write_text(template.fispact_files())
+        collapse = folder / 'collapse.i'
+        collapse.write_text(template.fispact_collapse())
+        arb_flux = folder / 'arb_flux'
+        arb_flux.write_text(template.create_arbflux_text(ebins, spectrum))
+
+        case_list = ['collapse.i']
+        for c, vol in cell_vols.items():
+            den = densities[c]
+            mat_text = material_description(materials[c], den * vol, density=den)
+            inventory_name = 'inventory_{0}.i'.format(c)
+            inventory = folder / inventory_name
+            inventory.write_text(template.fispact_inventory(flux, mat_text))
+            case_list.append(inventory_name)
+        task_list.append((folder, case_list))
+        
+    return task_list
 
 
 def create_simple_tasks(path, ebins, materials, flux, mass):
@@ -250,8 +283,9 @@ def create_simple_tasks(path, ebins, materials, flux, mass):
     for i in range(nf):
         f = np.zeros(nf)
         f[i] = flux
-        folder = path / ('case_{0}'.format(i))
+        folder = path / ('case-{0}'.format(i))
         folder.mkdir()
+
         files = folder / 'files'
         files.write_text(template.fispact_files())
         collapse = folder / 'collapse.i'
