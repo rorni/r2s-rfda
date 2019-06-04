@@ -58,6 +58,7 @@ def init_files_template(datalib):
     datalib : dict
         A dictionary of libraries to be used in FISPACT calculations.
     """
+    global files_temp
     max_len = max(map(len, datalib.keys()))
     lib_str = []
     for name in order:
@@ -78,6 +79,7 @@ def init_collapse_template(libxs, nestrc):
     nestrc : int
         The number of energy groups in neutron spectrum.
     """
+    global collapse_temp
     temp = read_template('collapse.temp')
     collapse_temp = temp.format(nestrc=nestrc, libxs=libxs)
 
