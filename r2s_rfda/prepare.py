@@ -2,6 +2,7 @@
 
 from collections import deque, defaultdict
 
+import numpy as np
 from mckit import read_mcnp
 from mckit.parser.meshtal_parser import read_meshtal
 
@@ -70,9 +71,9 @@ def create_tasks(path, **kwargs):
     # set templates
     with open(kwargs['inventory']) as f:
         text = f.read()
-    template.create_scenario_template(text, kwargs['norm_flux'])
-    files_text = template.fispact_files(kwargs['libs'])
-    collapse_text = template.fispact_collapse(kwargs['libxs'], fmesh._data.shape[0])
+    template.init_inventory_template(text, kwargs['norm_flux'])
+    template.init_files_template(kwargs['libs'])
+    template.init_collapse_template(kwargs['libxs'], fmesh._data.shape[0])
 
     # Set configuration
     config = {}
@@ -81,7 +82,10 @@ def create_tasks(path, **kwargs):
     if kwargs['approach'] == 'full':
         task_list = create_full_tasks(path, fmesh, masses, mat_dict)
     elif kwargs['approach'] == 'simple':
-        task_list = create_simple_tasks(path)
+        F0 = np.max(fmesh._data)
+        M0 = masses.data.max()
+        mats = {m.name(): m for m in mat_dict.values()}
+        task_list = create_simple_tasks(path, ebins, mats, F0, M0)
 
     config['task_list'] = task_list
     return config
@@ -215,7 +219,8 @@ def create_full_tasks(path, fmesh, masses, materials):
         List of tasks for execution. List of tuples: 
         (case_folder_name, [inventory_names])
     """
-    raise NotImplementedError
+    task_list = []
+
 
 
 def create_simple_tasks(path, ebins, materials, flux, mass):
@@ -240,21 +245,47 @@ def create_simple_tasks(path, ebins, materials, flux, mass):
         List of tasks to be executed. List of tuples:
         (case_folder_name, [inventory_names])
     """
-    raise NotImplementedError
+    task_list = []
+    nf = len(ebins) - 1
+    for i in range(nf):
+        f = np.zeros(nf)
+        f[i] = flux
+        folder = path / ('case_{0}'.format(i))
+        folder.mkdir()
+        files = folder / 'files'
+        files.write_text(template.fispact_files())
+        collapse = folder / 'collapse.i'
+        collapse.write_text(template.fispact_collapse())
+        arb_flux = folder / 'arb_flux'
+        arb_flux.write_text(template.create_arbflux_text(ebins, f))
+
+        case_list = ['collapse.i']
+        for name, mat in materials.items():
+            mat_text = material_description(mat, mass)
+            inventory_name = 'inventory_{0}.i'.format(name)
+            inventory = folder / inventory_name
+            inventory.write_text(template.fispact_inventory(flux, mat_text))
+            case_list.append(inventory_name)
+        task_list.append((folder, case_list))
+
+    return task_list
 
 
-def create_lib_text(lib_dict):
-    """Creates lib text.
+def material_description(material, mass, density=1.0):
+    """Creates FISPACT material description.
 
     Parameters
     ----------
-    lib_dict : dict
-        A dictionary of libraries. lib_name -> path.
+    material : mckit.Composition
+        Material.
+    mass : float
+        Mass of the material.
+    density : float
+        Density of the material. Default: 1.0 g/cc.
     
     Returns
     -------
-    lib_text : str
-        A text to be inserted into files file.
+    mat_text : str
+        Fispact material description.
     """
     raise NotImplementedError
-
