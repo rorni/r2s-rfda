@@ -5,6 +5,7 @@ from collections import deque, defaultdict
 import numpy as np
 from mckit import read_mcnp
 from mckit.parser.meshtal_parser import read_meshtal
+from mckit.material import AVOGADRO
 
 from . import template
 from . import data
@@ -322,4 +323,13 @@ def material_description(material, mass, density=1.0):
     mat_text : str
         Fispact material description.
     """
-    raise NotImplementedError
+    lines = deque()
+    expanded_mat = material.expand()
+    tot_atoms = mass / expanded_mat.molar_mass * AVOGADRO
+    for elem, conc in expanded_mat:
+        elem_name = elem.fispact_repr()
+        atom_qty = tot_atoms * conc
+        lines.append('  {0} {1:.4e}'.format(elem_name, atom_qty))
+    lines.appendleft('FUEL {0}'.format(len(lines)))
+    lines.appendleft('DENSITY {0:.4e}'.format(density))
+    return '\n'.join(lines)
