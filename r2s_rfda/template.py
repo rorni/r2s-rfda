@@ -11,9 +11,9 @@ def read_template(temp_name):
     return template
 
 
-files_temp = read_template('files.temp')
-collapse_temp = read_template('collapse.temp')
-condense_temp = read_template('condense.temp')
+files_temp = None # read_template('files.temp')
+collapse_temp = None # read_template('collapse.temp')
+condense_temp = None # read_template('condense.temp')
 inventory_temp = None
 flux_coeffs = None
 
@@ -23,8 +23,8 @@ order = [
 ]
 
 
-def create_scenario_template(inptemp, norm_flux):
-    """Creates new template with replaced fluxes in irradiation scenario.
+def init_inventory_template(inptemp, norm_flux):
+    """Initialize new template with replaced fluxes in irradiation scenario.
 
     New template is stored in module local variable since the template will not
     be changed for particular task. The irradiation profile is also stored at
@@ -50,18 +50,13 @@ def create_scenario_template(inptemp, norm_flux):
     flux_coeffs = np.array(flux_coeffs)
 
 
-def fispact_files(datalib):
-    """Creates files text.
+def init_files_template(datalib):
+    """Initializes files template.
 
     Parameters
     ----------
     datalib : dict
         A dictionary of libraries to be used in FISPACT calculations.
-    
-    Returns
-    -------
-    text : str
-        Text of files file.
     """
     max_len = max(map(len, datalib.keys()))
     lib_str = []
@@ -69,11 +64,12 @@ def fispact_files(datalib):
         if name in datalib.keys():
             spaces = ' ' * (max_len - len(name) + 2)
             lib_str.append(name + spaces + datalib[name])
-    return files_temp.format(datalib='\n'.join(lib_str))
+    temp = read_template('files.temp')
+    files_temp = temp.format(datalib='\n'.join(lib_str))
 
 
-def fispact_collapse(libxs, nestrc):
-    """Creates collapse input file.
+def init_collapse_template(libxs, nestrc):
+    """Initializes collapse input file.
 
     Parameters
     ----------
@@ -81,13 +77,9 @@ def fispact_collapse(libxs, nestrc):
         If -1 - to use binary library, if 1 - use text library.
     nestrc : int
         The number of energy groups in neutron spectrum.
-    
-    Returns
-    -------
-    text : str
-        Text of collapse file.
     """
-    return collapse_temp.format(nestrc=nestrc, libxs=libxs)
+    temp = read_template('collapse.temp')
+    collapse_temp = temp.format(nestrc=nestrc, libxs=libxs)
 
 
 def fispact_inventory(flux, material):
@@ -106,6 +98,16 @@ def fispact_inventory(flux, material):
         Text of inventory file.
     """
     raise NotImplementedError
+
+
+def fispact_files():
+    """Gets fispact files text."""
+    return files_temp
+
+
+def fispact_collapse():
+    """Gets fispact collapse text."""
+    return collapse_temp
 
 
 def create_arbflux_text(ebins, flux):

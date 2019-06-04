@@ -16,10 +16,10 @@ def load_file(filename):
 @pytest.mark.parametrize('input, norm_flux, templ, coeffs', [
     ('input_1.i', 4.5643E+12, 'temp_1.i', [0.00535723, 0.04125058, 0.08303573, 1., 1.39999562])
 ])
-def test_create_scenario_template(input, norm_flux, templ, coeffs):
+def test_init_inventory_template(input, norm_flux, templ, coeffs):
     input = load_file(input)
     templ = load_file(templ)
-    template.create_scenario_template(input, norm_flux)
+    template.init_inventory_template(input, norm_flux)
     assert template.inventory_temp == templ
     np.testing.assert_array_almost_equal(template.flux_coeffs, coeffs)
 
@@ -31,7 +31,8 @@ def test_create_scenario_template(input, norm_flux, templ, coeffs):
 ])
 def test_fispact_files(datalib, answer):
     answer = load_file(answer)
-    result = template.fispact_files(datalib)
+    template.init_files_template(datalib)
+    result = template.fispact_files()
     assert result == answer
 
 
@@ -41,14 +42,15 @@ def test_fispact_files(datalib, answer):
 ])
 def test_fispact_collapse(libxs, nestrc, answer):
     answer = load_file(answer)
-    result = template.fispact_collapse(libxs, nestrc)
+    template.init_collapse_template(libxs, nestrc)
+    result = template.fispact_collapse()
     assert result == answer
 
 
 @pytest.fixture
 def temp():
     inp = load_file('input_0.i')
-    template.create_scenario_template(inp, 1.0e+10)
+    template.init_inventory_template(inp, 1.0e+10)
 
 
 @pytest.mark.parametrize('flux, material, answer', [
