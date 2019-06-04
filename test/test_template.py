@@ -61,6 +61,7 @@ def temp():
     (1.0e+09, 'MASS 6.0 5\n  Fe 65.255\n  Cr 18.0\n  Ni 12.015\n  Mo 2.4\n  Mn 1.8', 'temp_04.i')
 ])
 def test_fispact_inventory(temp, flux, material, answer):
+    answer = load_file(answer)
     result = template.fispact_inventory(flux, material)
     assert result == answer
 
