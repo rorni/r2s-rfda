@@ -71,9 +71,9 @@ def load_config(cwd):
 def arg_parser():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(prog='R2S method')
-    subparsers = parser.add_subparsers(dest='action')
+    subparsers = parser.add_subparsers(dest='action', required=True)
 
-    parser_common = argparse.ArgumentParser()
+    parser_common = argparse.ArgumentParser(add_help=False)
     parser_common.add_argument(
         'folder', type=str, help='Working folder'
     )
