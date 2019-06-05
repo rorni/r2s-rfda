@@ -5,7 +5,7 @@ import pickle
 import configparser
 from pathlib import Path
 
-from . import prepare, run, fetch, source
+from . import prepare, run, fetch, source, utils
 
 
 def load_task(filename):
@@ -101,8 +101,16 @@ def arg_parser():
         'source', type=str, help='file for generated SDEF'
     )
     parser_source.add_argument(
+        'time', type=utils.convert_time_literal, 
+        help='time moment, for which gamma source must be generated.'
+    )
+    parser_source.add_argument(
         '-d', '--distribution', type=int, nargs='?', default=1, 
         help='the first number of source distributions to be generated.'
+    )
+    parser_source.add_argument(
+        '-z', '--zero', action='store_true', 
+        help='set end of irradiation as time zero.'
     )
 
     args = parser.parse_args()
@@ -149,6 +157,9 @@ def main():
         elif command['action'] == 'source':
             gamma_data = fetch.load_gamma(path)
             sd = command['distribution']
-            sdef = source.create_source(gamma_data, start_distr=sd)
+            time_m = command['time']
+            if command['zero']:
+                pass
+            sdef = source.create_source(gamma_data, time_m, start_distr=sd)
             with open(path / 'sdef.i', 'w') as f:
                 f.write(sdef)
