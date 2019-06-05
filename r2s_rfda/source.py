@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import mckit.source as mcs
+
 
 def create_source(gamma_data, start_distr=1):
     """Creates MCNP SDEF for gamma source.
