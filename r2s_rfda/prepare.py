@@ -81,7 +81,9 @@ def create_tasks(path, **kwargs):
 
     # Create input files
     if kwargs['approach'] == 'full':
-        task_list = create_full_tasks(path, fmesh, vol_dict, mat_dict, den_dict)
+        task_list, index_output = create_full_tasks(
+            path, fmesh, vol_dict, mat_dict, den_dict
+        )
     elif kwargs['approach'] == 'simple':
         F0 = np.max(fmesh._data)
         M0 = masses.data.max()
@@ -95,9 +97,12 @@ def create_tasks(path, **kwargs):
         beta = data.SparseData(masses.axes, masses.labels, masses / M0)
 
         mats = {m.name(): m for m in mat_dict.values()}
-        task_list = create_simple_tasks(path, ebins, mats, F0, M0)
+        task_list, index_output = create_simple_tasks(
+            path, ebins, mats, F0, M0
+        )
 
     config['task_list'] = task_list
+    config['index_output'] = index_output
     return config
 
 
@@ -229,8 +234,11 @@ def create_full_tasks(path, fmesh, volumes, materials, densities):
     task_list : list
         List of tasks for execution. List of tuples: 
         (case_folder_name, [inventory_names])
+    index_output : dict
+        A dictionary (c, i, j, k) -> output_file_name.
     """
     task_list = []
+    index_output = {}
     ebins = fmesh._ebins
     fdata = fmesh._data
     spatial_to_cell = defaultdict(list)
@@ -252,9 +260,10 @@ def create_full_tasks(path, fmesh, volumes, materials, densities):
             add_inventory_case(
                 task_item, inventory_name, flux, mat_text
             )
+            index_output[(c, i, j, k)] = task_item[0] / (inventory_name + '.out')
         task_list.append(task_item)
         
-    return task_list
+    return task_list, index_output
 
 
 def prepare_folder(path, name, ebins, spectrum):
@@ -330,8 +339,11 @@ def create_simple_tasks(path, ebins, materials, flux, mass):
     task_list : list
         List of tasks to be executed. List of tuples:
         (case_folder_name, [inventory_names])
+    index_output : dict
+        A dictionary (n_erg_bin, mat_name) -> output_file_name.
     """
     task_list = []
+    index_output = {}
     nf = len(ebins) - 1
     for i in range(nf):
         spectrum = np.zeros(nf)
@@ -343,13 +355,14 @@ def create_simple_tasks(path, ebins, materials, flux, mass):
 
         for name, mat in materials.items():
             mat_text = material_description(mat, mass)
-            inventory_name = 'inventory_{0}.i'.format(name)
+            inventory_name = 'inventory_{0}'.format(name)
             add_inventory_case(
-                task_item, inventory_name, flux, mat_text
+                task_item, inventory_name + '.i', flux, mat_text
             )
+            index_output[(i, name)] = task_item[0] / (inventory_name + '.out')
         task_list.append(task_item)
 
-    return task_list
+    return task_list, index_output
 
 
 def material_description(material, mass, density=1.0):
