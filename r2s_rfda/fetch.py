@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import pypact
+import pypact as pp
+import numpy as np
+
+from itertools import accumulate
 
 
 def collect(path, config):
@@ -51,7 +54,24 @@ def read_fispact_output(path):
     activity : dict
         A dictionary of the isotope activities. (time_label, isotope) -> activity.
     gamma_yield : dict
-        A dictionary of the decay gamma intensity. (time_label, en_label) -> gamma yield 
-        [gamma/sec]
+        A dictionary of the decay gamma intensity. time_label ->
+        gamma yield group spectrum [gamma/sec]
     """
-    pass
+    with pp.Reader(path) as output:
+        idata = output.inventory_data
+    ebins = np.array(idata[0].gamma_spectrum.boundaries)
+    eners = 0.5 * (ebins[1:] + ebins[:-1])
+    durations = []
+    time_labels = []
+    atoms = {}
+    activity = {}
+    gamma_yield = {}
+    for i, ts in enumerate(idata):
+        durations.append(ts.duration)
+        time_labels.append(np.array(durations).sum())
+        gamma_yield[time_labels[-1]] = np.array(ts.gamma_spectrum.values) / eners
+        for nuc in ts.nuclides:
+            name = nuc.element + str(nuc.isotope)
+            atoms[(time_labels[-1], name)] = nuc.atoms
+            activity[(time_labels[-1], name)] = nuc.activity
+    return time_labels, ebins, atoms, activity, gamma_yield
