@@ -53,6 +53,30 @@ def load_gamma(path):
     raise NotImplementedError
 
 
+def apply_superposition(tensor, material, alpha, beta):
+    """
+
+    Parameters
+    ----------
+    tensor : SparseData object
+        Activation data obtained for F0 and M0
+    material : SparseData objects
+        Material-cell map
+    alpha : SparseData object
+        Flux normilize coeffs
+    beta : SparseData object
+        Mass normilize coeffs
+
+    Returns
+    -------
+
+    """
+    tensor = tensor.tensor_dot(alpha)
+    tensor = tensor.tensor_dot(material)
+    tensor = tensor.multiply(beta)
+    return tensor
+
+
 def read_fispact_output(path):
     """Reads FISPACT output file.
 
