@@ -9,3 +9,6 @@ collapxo  COLLAPX
 
 # condensed decay and fission data (in and out)
 arrayx  ARRAYX
+
+fluxes fluxes
+arb_flux  arb_flux
