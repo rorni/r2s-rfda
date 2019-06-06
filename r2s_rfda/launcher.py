@@ -127,21 +127,21 @@ def main():
         casepath.mkdir()
         
         model, datalib, fispact = load_task(command['config'])
-        try:
-            config = prepare.create_tasks(
-                casepath, 
-                mcnp_name=model['mcnp'], 
-                fmesh_name=model['fmesh'],
-                tally_name=model['tally'],
-                min_volume=model['minvol'], 
-                libs=datalib,
-                libxs=fispact['libxs'],
-                inventory=fispact['inventory'],
-                approach=fispact['approach'],
-                norm_flux=fispact['norm_flux']
-            )
-        except:
-            pass
+        # try:
+        config = prepare.create_tasks(
+            casepath, 
+            mcnp_name=model['mcnp'], 
+            fmesh_name=model['fmesh'],
+            tally_name=int(model['tally']),
+            min_volume=float(model['minvol']),
+            libs=datalib,
+            libxs=fispact['libxs'],
+            inventory=fispact['inventory'],
+            approach=model['approach'],
+            norm_flux=float(fispact['norm_flux'])
+        )
+        # except:
+        #    pass
         save_config(path, **config)
         
     else:

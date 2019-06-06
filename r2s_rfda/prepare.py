@@ -29,11 +29,18 @@ def create_tasks(path, **kwargs):
     mcnp_name = kwargs['mcnp_name']
     print('Reading MCNP model ({0}) ...'.format(mcnp_name))
     model = read_mcnp(mcnp_name)
-
+    
     fmesh_name = kwargs['fmesh_name']
     print('Reading meshtal file ({0}) ...'.format(fmesh_name))
     tallies = read_meshtal(fmesh_name)
-    fmesh = tallies[kwargs['tally']]
+    fmesh = tallies[kwargs['tally_name']]
+
+    # set templates
+    with open(kwargs['inventory']) as f:
+        text = f.read()
+    template.init_inventory_template(text, kwargs['norm_flux'])
+    template.init_files_template(kwargs['libs'])
+    template.init_collapse_template(kwargs['libxs'], fmesh._data.shape[0])
 
     bbox = fmesh.mesh.bounding_box()
     print('Selecting cells ...')
@@ -69,20 +76,22 @@ def create_tasks(path, **kwargs):
 
     masses = density.tensor_dot(volumes)
 
-    # set templates
-    with open(kwargs['inventory']) as f:
-        text = f.read()
-    template.init_inventory_template(text, kwargs['norm_flux'])
-    template.init_files_template(kwargs['libs'])
-    template.init_collapse_template(kwargs['libxs'], fmesh._data.shape[0])
-
     # Set configuration
-    config = {}
+    config = {
+        'xbins': fmesh.mesh._xbins, 'ybins': fmesh.mesh._ybins, 
+        'zbins': fmesh.mesh._zbins, 'cell_labels': cell_labels, 
+        'mat_labels': mat_labels, 
+        'vol_dict': vol_dict, 'approach': kwargs['approach']
+    }
+
+    case_path = path / 'cases'
+    case_path.mkdir()
 
     # Create input files
+    print('Creating input files ...')
     if kwargs['approach'] == 'full':
         task_list, index_output = create_full_tasks(
-            path, fmesh, vol_dict, mat_dict, den_dict
+            case_path, fmesh, vol_dict, mat_dict, den_dict
         )
     elif kwargs['approach'] == 'simple':
         F0 = np.max(fmesh._data)
@@ -94,11 +103,14 @@ def create_tasks(path, **kwargs):
             (range(len(ebins) - 1), i_labels, j_labels, k_labels),
             data.sparse.COO.from_numpy(fmesh._data / F0)
         )
-        beta = data.SparseData(masses.axes, masses.labels, masses / M0)
+        beta = data.SparseData(masses.axes, masses.labels, masses.data / M0)
+
+        config['alpha'] = alpha
+        config['beta'] = beta
 
         mats = {m.name(): m for m in mat_dict.values()}
         task_list, index_output = create_simple_tasks(
-            path, ebins, mats, F0, M0
+            case_path, ebins, mats, F0, M0
         )
 
     config['task_list'] = task_list
@@ -256,7 +268,7 @@ def create_full_tasks(path, fmesh, volumes, materials, densities):
         for c, vol in cell_vols.items():
             den = densities[c]
             mat_text = material_description(materials[c], den * vol, density=den)
-            inventory_name = 'inventory_{0}.i'.format(c)
+            inventory_name = 'inventory_{0}'.format(c)
             add_inventory_case(
                 task_item, inventory_name, flux, mat_text
             )
@@ -295,7 +307,7 @@ def prepare_folder(path, name, ebins, spectrum):
     arb_flux = folder / 'arb_flux'
     arb_flux.write_text(template.create_arbflux_text(ebins, spectrum))
 
-    return folder, ['collapse.i']
+    return folder, ['collapse']
 
 
 def add_inventory_case(task_item, name, flux, mat):
@@ -313,7 +325,7 @@ def add_inventory_case(task_item, name, flux, mat):
         Material description.
     """
     folder, cases = task_item
-    inventory = folder / name
+    inventory = folder / (name + '.i')
     inventory.write_text(template.fispact_inventory(flux, mat))
     cases.append(name)
 
@@ -357,7 +369,7 @@ def create_simple_tasks(path, ebins, materials, flux, mass):
             mat_text = material_description(mat, mass)
             inventory_name = 'inventory_{0}'.format(name)
             add_inventory_case(
-                task_item, inventory_name + '.i', flux, mat_text
+                task_item, inventory_name, flux, mat_text
             )
             index_output[(i, name)] = task_item[0] / (inventory_name + '.out')
         task_list.append(task_item)
