@@ -155,7 +155,9 @@ def main():
             fetch.collect(path, config)
             
         elif command['action'] == 'source':
-            gamma_data = fetch.load_gamma(path)
+            filename = path / 'gamma.dat'
+            with open(filename, 'br') as f:
+                gamma_data = pickle.load(f)
             sd = command['distribution']
             time_m = command['time']
             if command['zero']:

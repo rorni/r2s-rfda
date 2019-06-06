@@ -58,6 +58,7 @@ def create_tasks(path, **kwargs):
     i_labels = list(range(fmesh.mesh.shape[0]))
     j_labels = list(range(fmesh.mesh.shape[1]))
     k_labels = list(range(fmesh.mesh.shape[2]))
+    en_labels = list(range(fmesh._data.shape[0] - 1))
 
     ext_den_dict = {(c, c): rho for c, rho in den_dict.items()}
     density = data.SparseData(
@@ -81,7 +82,9 @@ def create_tasks(path, **kwargs):
         'xbins': fmesh.mesh._xbins, 'ybins': fmesh.mesh._ybins, 
         'zbins': fmesh.mesh._zbins, 'cell_labels': cell_labels, 
         'mat_labels': mat_labels, 
-        'vol_dict': vol_dict, 'approach': kwargs['approach']
+        'vol_dict': vol_dict, 'approach': kwargs['approach'],
+        'material': material, 'en_labels': en_labels,
+        'i_labels': i_labels, 'j_labels': j_labels, 'k_labels': k_labels
     }
 
     case_path = path / 'cases'
