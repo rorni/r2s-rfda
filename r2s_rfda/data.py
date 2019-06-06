@@ -25,7 +25,9 @@ class SparseData:
     tensor_dot(data)
         Tensor dot product with other SparseData object.
     multiply(data)
-        Element-wise multiplication of the two arrays. 
+        Element-wise multiplication of the two arrays.
+    replace_axes() 
+        Copies the SparseData object and replaces specific axes.
     """
     def __init__(self, axes, labels, data):
         if len(axes) != len(labels):
@@ -132,6 +134,30 @@ class SparseData:
         else: 
             raise ValueError('Incorrect shapes.')
 
+    def replace_axes(self, **axeslabs):
+        """Make a copy of data and replaces axes.
+
+        Parameters
+        ----------
+        axeslabs : dict
+            A dictionary of pairs (new_axis_name, axis_values).
+
+        Returns
+        -------
+        result : SparseData
+            New SparseData object.
+        """
+        new_ax = []
+        new_lab = []
+        for ax, labs in zip(self._axes, self._labels):
+            if ax in axeslabs.keys():
+                nax, nlab = axeslabs[ax]
+                new_ax.append(nax)
+                new_lab.append(nlab)
+            else:
+                new_ax.append(ax)
+                new_lab.append(labs)
+        return SparseData(new_ax, new_lab, self._data)
 
     @property
     def axes(self):

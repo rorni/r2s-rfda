@@ -89,3 +89,31 @@ def test_multiply(tensor1, tensor2, answer):
     for index, value in answer[2].items():
         assert result.data[index] == value
     assert result.data.nnz == len(answer[2])
+
+
+@pytest.mark.parametrize('tensor, axeslabs, answer', [
+    (
+        (
+            ('cell', 'i', 'j'), ([1, 2, 3, 4], [0, 1, 2], [0, 1]), 
+            {(1, 0, 0): 3, (1, 2, 0): 2, (2, 1, 1): 4, (3, 1, 0): 5, (4, 0, 0): 1}
+        ),
+        {
+            'i': ('xbins', [-1.0, 1.0, 3.0, 6.0]), 
+            'j': ('ybins', [-5.0, 5.0, 10.0])
+        },
+        (
+            ('cell', 'xbins', 'ybins'), ((1, 2, 3, 4), (-1.0, 1.0, 3.0, 6.0), 
+            (-5.0, 5.0, 10.0)), 
+            {(0, 0, 0): 3, (0, 2, 0): 2, (1, 1, 1): 4, (2, 1, 0): 5, (3, 0, 0): 1}
+        )
+    ),
+    
+])
+def test_replace_axes(tensor, axeslabs, answer):
+    t = data.SparseData(*tensor)
+    result = t.replace_axes(**axeslabs)
+    assert result.axes == answer[0]
+    assert result.labels == answer[1]
+    for index, value in answer[2].items():
+        assert result.data[index] == value
+    assert result.data.nnz == len(answer[2])
