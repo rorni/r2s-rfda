@@ -129,7 +129,6 @@ class SparseData:
             d_ind = enumerate_labels(daxes)
             pert = [s_ind[l] for l in daxes]
             new_data = self._data.transpose(pert) * data_arr
-            print(daxes, dlabels)
             return SparseData(daxes, dlabels, new_data)
         else: 
             raise ValueError('Incorrect shapes.')

@@ -58,7 +58,7 @@ def create_tasks(path, **kwargs):
     i_labels = list(range(fmesh.mesh.shape[0]))
     j_labels = list(range(fmesh.mesh.shape[1]))
     k_labels = list(range(fmesh.mesh.shape[2]))
-    en_labels = list(range(fmesh._data.shape[0] - 1))
+    en_labels = list(range(fmesh._data.shape[0]))
 
     ext_den_dict = {(c, c): rho for c, rho in den_dict.items()}
     density = data.SparseData(

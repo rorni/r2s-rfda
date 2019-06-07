@@ -160,6 +160,7 @@ def main():
                 gamma_data = pickle.load(f)
             sd = command['distribution']
             time_m = command['time']
+            print(gamma_data.axes, gamma_data.labels)
             if command['zero']:
                 pass
             sdef = source.create_source(gamma_data, time_m, start_distr=sd)

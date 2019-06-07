@@ -33,7 +33,7 @@ def collect(path, config):
         for t, gamma_ar in gamma_yield.items():
             for i, gam in enumerate(gamma_ar):
                 G_dict[(t, i, *index)] = gam
-            
+    
     nuclides = list(sorted(nuclides))
     g_labels = list(range(len(ebins) - 1))
     if config['approach'] == 'full':
@@ -142,7 +142,8 @@ def read_fispact_output(path):
     """
     with pp.Reader(path) as output:
         idata = output.inventory_data
-    ebins = np.array(idata[0].gamma_spectrum.boundaries)
+    ebins = np.array(idata[10].gamma_spectrum.boundaries)
+    
     eners = 0.5 * (ebins[1:] + ebins[:-1])
     durations = []
     time_labels = []
@@ -151,7 +152,7 @@ def read_fispact_output(path):
     gamma_yield = {}
     for i, ts in enumerate(idata):
         durations.append(ts.duration)
-        time_labels.append(np.array(durations).sum())
+        time_labels.append(int(np.array(durations).sum()))
         gamma_yield[time_labels[-1]] = np.array(ts.gamma_spectrum.values) / eners
         for nuc in ts.nuclides:
             name = nuc.element + str(nuc.isotope) + nuc.state
