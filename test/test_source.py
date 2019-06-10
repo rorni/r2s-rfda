@@ -143,3 +143,15 @@ def test_create_source(gamma_data, timelab, start_distr, answer):
     sdef = source.create_source(gamma_data, timelab, start_distr=start_distr)
     print(sdef)
     assert sdef == answer
+
+
+@pytest.mark.parametrize('t, time_labels, answer', [
+    (349, [0, 5, 349, 350, 400], 349),
+    (0, [0, 4, 5, 6, 7], 0),
+    (0, [1, 2, 3, 4, 5], 1),
+    (349, [0, 5, 340, 350, 400], 350),
+    (349, [0, 5, 340, 360, 400], 340)
+])
+def test_find_closest(t, time_labels, answer):
+    result = source.find_closest(t, time_labels)
+    assert result == answer

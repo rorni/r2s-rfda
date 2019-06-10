@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import numpy as np
 import mckit.source as mcs
 
 from . import data
@@ -108,3 +109,33 @@ def create_bin_distributions(bins, start_name):
         )
         start_name += 1
     return start_name, distributions
+
+
+def find_closest(t, time_labels):
+    """Finds the closest of time_labels to t.
+
+    Parameters
+    ----------
+    t : int
+        Time label.
+    time_labels : list
+        Time labels to search among which.
+
+    Returns
+    -------
+    cl : int
+        Closest time label.
+    """
+    i = np.searchsorted(time_labels, t)
+    if i == 0:
+        return time_labels[0]
+    elif i == len(time_labels):
+        return time_labels[-1]
+    else:
+        min_el = time_labels[i-1]
+        max_el = time_labels[i]
+        if t - min_el < max_el - t:
+            return min_el
+        else:
+            return max_el
+
