@@ -159,7 +159,7 @@ def main():
             with open(filename, 'br') as f:
                 gamma_data = pickle.load(f)
             sd = command['distribution']
-            time_m = command['time']
+            time_m = utils.convert_time_literal(command['time'])
             print(gamma_data.axes, gamma_data.labels)
             if command['zero']:
                 pass

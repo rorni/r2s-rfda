@@ -25,7 +25,10 @@ def create_source(gamma_data, timelab, start_distr=1):
     """
     label_index = gamma_data.axes.index('time')
     time_labels = gamma_data.labels[label_index]
-    time_selector = data.SparseData(('time',), (time_labels,), {(timelab,): 1})
+    closest_lab = find_closest(timelab, time_labels)
+    if closest_lab != timelab:
+        print('Choosing the closest time label available: {0}'.format(closest_lab))
+    time_selector = data.SparseData(('time',), (time_labels,), {(closest_lab,): 1})
     gamma_slice = gamma_data.tensor_dot(time_selector)
     source, intensity = activation_gamma_source(gamma_slice, start_distr)
     sdef = 'C total gamma intensity = {0:.5e}\n{1}'.format(intensity, source.mcnp_repr())

@@ -268,7 +268,7 @@ def create_full_tasks(path, fmesh, volumes, materials, densities):
             path, 'case-{0}-{1}-{2}'.format(i, j, k), ebins, spectrum
         )
 
-        for c, vol in cell_vols.items():
+        for c, vol in cell_vols:
             den = densities[c]
             mat_text = material_description(materials[c], den * vol, density=den)
             inventory_name = 'inventory_{0}'.format(c)
