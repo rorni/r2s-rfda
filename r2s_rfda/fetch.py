@@ -95,7 +95,7 @@ def collect(path, config):
 
 
 def apply_superposition(tensor, material, alpha, beta):
-    """
+    """Applies superposition to material-flux results.
 
     Parameters
     ----------
