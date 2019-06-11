@@ -53,14 +53,22 @@ def temp():
     template.init_inventory_template(inp, 1.0e+10)
 
 
-@pytest.mark.parametrize('flux, material, answer', [
-    (1.0e+10, 'DENSITY 2.0\nFUEL 2\n  Li6  8.5E+24\n  Li7  1.5E+24', 'temp_01.i'),
-    (2.0e+10, 'DENSITY 3.5\nFUEL 2\n  Fe56  7.5E+24\n  Co60  3.5E+24', 'temp_02.i'),
-    (1.0e+11, 'DENSITY 7.8\nMASS 1.0 7\n  Fe 65.255\n  Cr 18.0\n  Ni 12.015\n'
-        '  Mo 2.4\n  Mn 1.8\n  Si 0.5\n  C  0.03', 'temp_03.i'),
-    (1.0e+09, 'MASS 6.0 5\n  Fe 65.255\n  Cr 18.0\n  Ni 12.015\n  Mo 2.4\n  Mn 1.8', 'temp_04.i')
+inventory_mats = [
+    'DENSITY 2.0\nFUEL 2\n  Li6  8.5E+24\n  Li7  1.5E+24',
+    'DENSITY 3.5\nFUEL 2\n  Fe56  7.5E+24\n  Co60  3.5E+24',
+    'DENSITY 7.8\nMASS 1.0 7\n  Fe 65.255\n  Cr 18.0\n  Ni 12.015\n'
+        '  Mo 2.4\n  Mn 1.8\n  Si 0.5\n  C  0.03',
+    'MASS 6.0 5\n  Fe 65.255\n  Cr 18.0\n  Ni 12.015\n  Mo 2.4\n  Mn 1.8'
+]
+
+@pytest.mark.parametrize('flux, mat_index, answer', [
+    (1.0e+10, 0, 'temp_01.i'),
+    (2.0e+10, 1, 'temp_02.i'),
+    (1.0e+11, 2, 'temp_03.i'),
+    (1.0e+09, 3, 'temp_04.i')
 ])
-def test_fispact_inventory(temp, flux, material, answer):
+def test_fispact_inventory(temp, flux, mat_index, answer):
+    material = inventory_mats[mat_index]
     answer = load_file(answer)
     result = template.fispact_inventory(flux, material)
     assert result == answer
