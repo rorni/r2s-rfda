@@ -99,18 +99,19 @@ def apply_superposition(tensor, material, alpha, beta):
 
     Parameters
     ----------
-    tensor : SparseData object
+    tensor : SparseData
         Activation data obtained for F0 and M0
-    material : SparseData objects
+    material : SparseData
         Material-cell map
-    alpha : SparseData object
+    alpha : SparseData
         Flux normilize coeffs
-    beta : SparseData object
+    beta : SparseData
         Mass normilize coeffs
 
     Returns
     -------
-
+    result : SparseData
+        Result data.
     """
     tensor = tensor.tensor_dot(alpha)
     tensor = tensor.tensor_dot(material)
