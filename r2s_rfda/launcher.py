@@ -85,7 +85,7 @@ def arg_parser():
 
     # prepare arguments
     parser_prepare.add_argument(
-        'config', type=str, help='Configuration file.'
+        '--config', type=str, help='Configuration file.', default='config.ini'
     )    
 
     # run arguments
@@ -122,21 +122,20 @@ def main():
     path = Path(command['folder'])
     if command['action'] == 'prepare':
         # create folder
-        path.mkdir()
         casepath = Path(path / 'cases')
         casepath.mkdir()
         
-        model, datalib, fispact = load_task(command['config'])
+        model, datalib, fispact = load_task(path / command['config'])
         # try:
         config = prepare.create_tasks(
             casepath, 
-            mcnp_name=model['mcnp'], 
-            fmesh_name=model['fmesh'],
+            mcnp_name=path / model['mcnp'], 
+            fmesh_name=path / model['fmesh'],
             tally_name=int(model['tally']),
             min_volume=float(model['minvol']),
             libs=datalib,
             libxs=fispact['libxs'],
-            inventory=fispact['inventory'],
+            inventory=path / fispact['inventory'],
             approach=model['approach'],
             norm_flux=float(fispact['norm_flux'])
         )
@@ -155,9 +154,7 @@ def main():
             fetch.collect(path, config)
             
         elif command['action'] == 'source':
-            filename = path / 'gamma.dat'
-            with open(filename, 'br') as f:
-                gamma_data = pickle.load(f)
+            gamma_data = fetch.load_data(path, 'gamma')
             sd = command['distribution']
             time_m = utils.convert_time_literal(command['time'])
             print(gamma_data.axes, gamma_data.labels)

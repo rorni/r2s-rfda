@@ -160,3 +160,24 @@ def read_fispact_output(path):
             atoms[(time_labels[-1], name)] = nuc.atoms
             activity[(time_labels[-1], name)] = nuc.activity
     return time_labels, ebins, atoms, activity, gamma_yield
+
+
+def load_data(path, name):
+    """Loads data from path.
+
+    Parameters
+    ----------
+    path : Path
+        Path to output file.
+    name : str
+        Data name.
+    
+    Returns
+    -------
+    data : SparseData
+        Output data.
+    """
+    filename = path / (name + '.dat')
+    with open(filename, 'br') as f:
+        data = pickle.load(f)
+    return data
