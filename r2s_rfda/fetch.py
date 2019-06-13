@@ -143,7 +143,7 @@ def read_fispact_output(path):
     """
     with pp.Reader(path) as output:
         idata = output.inventory_data
-    ebins = np.array(idata[10].gamma_spectrum.boundaries)
+    ebins = np.array(idata[0].gamma_spectrum.boundaries)
     
     eners = 0.5 * (ebins[1:] + ebins[:-1])
     durations = []

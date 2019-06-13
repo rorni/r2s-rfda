@@ -121,45 +121,56 @@ def main():
     command = arg_parser()
     path = Path(command['folder'])
     if command['action'] == 'prepare':
-        # create folder
-        casepath = Path(path / 'cases')
-        casepath.mkdir()
-        
-        model, datalib, fispact = load_task(path / command['config'])
-        # try:
-        config = prepare.create_tasks(
-            casepath, 
-            mcnp_name=path / model['mcnp'], 
-            fmesh_name=path / model['fmesh'],
-            tally_name=int(model['tally']),
-            min_volume=float(model['minvol']),
-            libs=datalib,
-            libxs=fispact['libxs'],
-            inventory=path / fispact['inventory'],
-            approach=model['approach'],
-            norm_flux=float(fispact['norm_flux'])
-        )
-        # except:
-        #    pass
-        save_config(path, **config)
-        
-    else:
-        config = load_config(path)
-        if command['action'] == 'run':
-            threads = command['threads']
-            task_list = config['task_list']
-            run.run_tasks(task_list, threads=threads)
+        prepare_task(path, command['config'])
+    elif command['action'] == 'run':
+        run_task(path, command['threads'])
+    elif command['action'] == 'fetch':
+        fetch_task(path)
+    elif command['action'] == 'source':
+        create_source(path, command['time'], command['distribution'], command['zero'])
 
-        elif command['action'] == 'fetch':
-            fetch.collect(path, config)
-            
-        elif command['action'] == 'source':
-            gamma_data = fetch.load_data(path, 'gamma')
-            sd = command['distribution']
-            time_m = utils.convert_time_literal(command['time'])
-            print(gamma_data.axes, gamma_data.labels)
-            if command['zero']:
-                pass
-            sdef = source.create_source(gamma_data, time_m, start_distr=sd)
-            with open(path / 'sdef.i', 'w') as f:
-                f.write(sdef)
+
+def fetch_task(path):
+    config = load_config(path)
+    fetch.collect(path, config)
+
+
+def run_task(path, threads):
+    config = load_config(path)
+    task_list = config['task_list']
+    run.run_tasks(task_list, threads=threads)
+
+
+def create_source(path, time, sd, zero):
+    config = load_config(path)
+    gamma_data = fetch.load_data(path, 'gamma')
+    time_m = utils.convert_time_literal(time)
+    print(gamma_data.axes, gamma_data.labels)
+    if zero:
+        pass
+    sdef = source.create_source(gamma_data, time_m, start_distr=sd)
+    with open(path / 'sdef.i', 'w') as f:
+        f.write(sdef)
+
+
+def prepare_task(path, config_name):
+    casepath = Path(path / 'cases')
+    casepath.mkdir()
+    
+    model, datalib, fispact = load_task(path / config_name)
+    # try:
+    config = prepare.create_tasks(
+        casepath, 
+        mcnp_name=path / model['mcnp'], 
+        fmesh_name=path / model['fmesh'],
+        tally_name=int(model['tally']),
+        min_volume=float(model['minvol']),
+        libs=datalib,
+        libxs=fispact['libxs'],
+        inventory=path / fispact['inventory'],
+        approach=model['approach'],
+        norm_flux=float(fispact['norm_flux'])
+    )
+    # except:
+    #    pass
+    save_config(path, **config)
