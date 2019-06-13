@@ -32,6 +32,11 @@ def model():
     return read_mcnp('test/prepare/model1.i')
 
 
+@pytest.fixture
+def cells(model, mesh):
+    return prepare.select_cells(model, mesh.bounding_box())
+
+
 @pytest.mark.parametrize('cell_names', [
     [1, 2, 10, 21]
 ])
@@ -49,13 +54,36 @@ def test_select_cells(model, mesh, cell_names):
         (21, 3, 1, 0): 1.047
     }
 ])
-def test_calculate_volumes(model, mesh, answer):
-    cells = prepare.select_cells(model, mesh.bounding_box())
-    for c in cells:
-        print(c.mcnp_repr())
+def test_calculate_volumes(cells, mesh, answer):
     volumes = prepare.calculate_volumes(cells, mesh, min_volume=1.e-6)
-    print(volumes)
     assert len(answer) == len(volumes)
     for k, v in volumes.items():
-        print(k)
         assert v == pytest.approx(answer[k], 0.02)
+
+
+@pytest.mark.parametrize('answer', [
+    {1: 1, 2: 2, 10: 2, 21: 1}
+])
+def test_get_materials(cells, answer):
+    mats = prepare.get_materials(cells)
+    assert {k: m.name() for k, m in mats.items()} == answer
+
+
+@pytest.mark.parametrize('answer', [
+    {1: 7.8, 2: 1, 10: 1, 21: 7.8}
+])
+def test_get_density(cells, answer):
+    dens = prepare.get_densities(cells)
+    assert answer == pytest.approx(dens, 1.e-3)
+
+
+@pytest.mark.parametrize('vol_dict, den_dict, answer', [
+    (
+        {(1, 1, 2, 3): 0.5, (1, 3, 4, 0): 2.5, (3, 0, 1, 2): 1.0, (3, 1, 2, 3): 1.5},
+        {1: 2.0, 3: 4.0}, 
+        {(1, 1, 2, 3): 1, (1, 3, 4, 0): 5, (3, 0, 1, 2): 4, (3, 1, 2, 3): 6}
+    )
+])
+def test_get_masses(vol_dict, den_dict, answer):
+    masses = prepare.get_masses(vol_dict, den_dict)
+    assert answer == pytest.approx(masses, 1.e-3)
