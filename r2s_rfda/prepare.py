@@ -45,6 +45,7 @@ def create_tasks(path, **kwargs):
 
     mat_dict = get_materials(cells)
     den_dict = get_densities(cells)
+    mass_dict = get_masses(vol_dict, den_dict)
 
     # Label creation
     cell_labels = sorted([c.name() for c in cells])
@@ -54,30 +55,13 @@ def create_tasks(path, **kwargs):
     k_labels = list(range(fmesh.mesh.shape[2]))
     n_labels = list(range(fmesh._data.shape[0]))
 
-    ext_den_dict = {(c, c): rho for c, rho in den_dict.items()}
-    density = data.SparseData(
-        ('cell', 'cell'), (cell_labels, cell_labels), ext_den_dict
-    )
-
-    cell_to_mat_dict = {(c, m.name()): 1 for c, m in mat_dict.items()}
-    material = data.SparseData(
-        ('cell', 'material'), (cell_labels, mat_labels), cell_to_mat_dict
-    )
-
-    volumes = data.SparseData(
-        ('cell', 'i', 'j', 'k'), (cell_labels, i_labels, j_labels, k_labels),
-        vol_dict
-    )
-
-    masses = density.tensor_dot(volumes)
-
     # Set configuration
     config = {
         'xbins': fmesh.mesh._xbins, 'ybins': fmesh.mesh._ybins, 
         'zbins': fmesh.mesh._zbins, 'cell_labels': cell_labels, 
         'mat_labels': mat_labels, 
         'approach': kwargs['approach'],
-        'material': material, 'en_labels': n_labels,
+        'en_labels': n_labels,
         'i_labels': i_labels, 'j_labels': j_labels, 'k_labels': k_labels
     }
 
@@ -85,22 +69,28 @@ def create_tasks(path, **kwargs):
     print('Creating input files ...')
     if kwargs['approach'] == 'full':
         task_list, index_output = create_full_tasks(
-            path, fmesh, vol_dict, mat_dict, den_dict
+            path, fmesh, mass_dict, mat_dict, den_dict
         )
     elif kwargs['approach'] == 'simple':
+        cell_to_mat_dict = {(c, m.name()): 1 for c, m in mat_dict.items()}
+        config['material'] = data.SparseData(
+            ('cell', 'material'), (cell_labels, mat_labels), cell_to_mat_dict
+        )
+
         F0 = np.max(fmesh._data)
-        M0 = masses.data.max()
+        M0 = max(mass_dict.values())
         ebins = fmesh._ebins
 
-        alpha = data.SparseData(
+        config['alpha'] = data.SparseData(
             ('n_erg', 'i', 'j', 'k'), 
             (range(len(ebins) - 1), i_labels, j_labels, k_labels),
             data.sparse.COO.from_numpy(fmesh._data / F0)
         )
-        beta = data.SparseData(masses.axes, masses.labels, masses.data / M0)
-
-        config['alpha'] = alpha
-        config['beta'] = beta
+        config['beta'] = data.SparseData(
+            ('cell', 'i', 'j', 'k'), 
+            (cell_labels, i_labels, j_labels, k_labels), 
+            {k: v / M0 for k, v in mass_dict.items()}
+        )
 
         mats = {m.name(): m for m in mat_dict.values()}
         task_list, index_output = create_simple_tasks(
@@ -259,7 +249,7 @@ def get_masses(vol_dict, den_dict):
     return masses
 
 
-def create_full_tasks(path, fmesh, volumes, materials, densities):
+def create_full_tasks(path, fmesh, masses, materials, densities):
     """Creates fispact tasks.
 
     Parameters
@@ -268,8 +258,8 @@ def create_full_tasks(path, fmesh, volumes, materials, densities):
         Path, where tasks must be created.
     fmesh : FMesh
         Fmesh tally.
-    volumes : dict
-        A dictionary of cell volumes in each voxel. c, i, j, k -> volume.
+    masses : dict
+        A dictionary of cell masses in each voxel. c, i, j, k -> mass.
     materials : dict
         Dictionary of materials of every cell. cell_name -> material.
     densities : dict
@@ -288,10 +278,10 @@ def create_full_tasks(path, fmesh, volumes, materials, densities):
     ebins = fmesh._ebins
     fdata = fmesh._data
     spatial_to_cell = defaultdict(list)
-    for (c, i, j, k), vol in volumes.items():
-        spatial_to_cell[(i, j, k)].append((c, vol))
+    for (c, i, j, k), mass in masses.items():
+        spatial_to_cell[(i, j, k)].append((c, mass))
     
-    for (i, j, k), cell_vols in spatial_to_cell.items():
+    for (i, j, k), cell_mass in spatial_to_cell.items():
         spectrum = fdata[:, i, j, k]
         flux = np.sum(spectrum)
 
@@ -299,9 +289,9 @@ def create_full_tasks(path, fmesh, volumes, materials, densities):
             path, 'case-{0}-{1}-{2}'.format(i, j, k), ebins, spectrum
         )
 
-        for c, vol in cell_vols:
+        for c, mass in cell_mass:
             den = densities[c]
-            mat_text = material_description(materials[c], den * vol, density=den)
+            mat_text = material_description(materials[c], mass, density=den)
             inventory_name = 'inventory_{0}'.format(c)
             add_inventory_case(
                 task_item, inventory_name, flux, mat_text

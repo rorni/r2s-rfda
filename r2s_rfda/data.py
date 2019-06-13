@@ -126,7 +126,6 @@ class SparseData:
                 data_arr = data._data.broadcast_to(dshape)
             else:
                 data_arr = data._data
-            d_ind = enumerate_labels(daxes)
             pert = [s_ind[l] for l in daxes]
             new_data = self._data.transpose(pert) * data_arr
             return SparseData(daxes, dlabels, new_data)
