@@ -26,21 +26,15 @@ def create_tasks(path, **kwargs):
     config : dict
         Task configuration.
     """
-    mcnp_name = kwargs['mcnp_name']
-    print('Reading MCNP model ({0}) ...'.format(mcnp_name))
-    model = read_mcnp(mcnp_name)
+    model = read_mcnp_input(kwargs['mcnp_name'])
     
-    fmesh_name = kwargs['fmesh_name']
-    print('Reading meshtal file ({0}) ...'.format(fmesh_name))
-    tallies = read_meshtal(fmesh_name)
-    fmesh = tallies[kwargs['tally_name']]
+    fmesh = read_fmesh_tally(kwargs['fmesh_name'], kwargs['tally_name'])
 
     # set templates
-    with open(kwargs['inventory']) as f:
-        text = f.read()
-    template.init_inventory_template(text, kwargs['norm_flux'])
-    template.init_files_template(kwargs['libs'])
-    template.init_collapse_template(kwargs['libxs'], fmesh._data.shape[0])
+    init_templates(
+        kwargs['inventory'], kwargs['norm_flux'], kwargs['libs'], 
+        kwargs['libxs'], fmesh._data.shape[0]
+    )
 
     bbox = fmesh.mesh.bounding_box()
     print('Selecting cells ...')
@@ -58,7 +52,7 @@ def create_tasks(path, **kwargs):
     i_labels = list(range(fmesh.mesh.shape[0]))
     j_labels = list(range(fmesh.mesh.shape[1]))
     k_labels = list(range(fmesh.mesh.shape[2]))
-    en_labels = list(range(fmesh._data.shape[0]))
+    n_labels = list(range(fmesh._data.shape[0]))
 
     ext_den_dict = {(c, c): rho for c, rho in den_dict.items()}
     density = data.SparseData(
@@ -82,19 +76,16 @@ def create_tasks(path, **kwargs):
         'xbins': fmesh.mesh._xbins, 'ybins': fmesh.mesh._ybins, 
         'zbins': fmesh.mesh._zbins, 'cell_labels': cell_labels, 
         'mat_labels': mat_labels, 
-        'vol_dict': vol_dict, 'approach': kwargs['approach'],
-        'material': material, 'en_labels': en_labels,
+        'approach': kwargs['approach'],
+        'material': material, 'en_labels': n_labels,
         'i_labels': i_labels, 'j_labels': j_labels, 'k_labels': k_labels
     }
-
-    case_path = path / 'cases'
-    case_path.mkdir()
 
     # Create input files
     print('Creating input files ...')
     if kwargs['approach'] == 'full':
         task_list, index_output = create_full_tasks(
-            case_path, fmesh, vol_dict, mat_dict, den_dict
+            path, fmesh, vol_dict, mat_dict, den_dict
         )
     elif kwargs['approach'] == 'simple':
         F0 = np.max(fmesh._data)
@@ -113,12 +104,31 @@ def create_tasks(path, **kwargs):
 
         mats = {m.name(): m for m in mat_dict.values()}
         task_list, index_output = create_simple_tasks(
-            case_path, ebins, mats, F0, M0
+            path, ebins, mats, F0, M0
         )
 
     config['task_list'] = task_list
     config['index_output'] = index_output
     return config
+
+
+def read_mcnp_input(inp_filename):
+    print('Reading MCNP model ({0}) ...'.format(inp_filename))
+    return read_mcnp(inp_filename)
+
+
+def read_fmesh_tally(fmesh_filename, tally_name):
+    print('Reading meshtal file ({0}) ...'.format(fmesh_filename))
+    tallies = read_meshtal(fmesh_filename)
+    return tallies[tally_name]
+
+
+def init_templates(inv_filename, norm_flux, libs, libxs, nerg_groups):
+    with open(inv_filename) as f:
+        text = f.read()
+    template.init_inventory_template(text, norm_flux)
+    template.init_files_template(libs)
+    template.init_collapse_template(libxs, nerg_groups)
 
 
 def calculate_volumes(cells, mesh, min_volume):
@@ -145,9 +155,9 @@ def calculate_volumes(cells, mesh, min_volume):
                 box = mesh.get_voxel(i, j, k)
                 for c in cells:
                     vol = c.shape.volume(box=box, min_volume=min_volume)
-                if vol > 0:
-                    index = (c.name(), i, j, k)
-                    volumes[index] += vol
+                    if vol > 0:
+                        index = (c.name(), i, j, k)
+                        volumes[index] += vol
     return volumes
 
 
@@ -226,6 +236,27 @@ def get_densities(cells):
         name = c.name()
         densities[name] = mat.density
     return densities
+
+
+def get_masses(vol_dict, den_dict):
+    """Calculates masses of cell pieces in every voxel.
+     
+    Parameters
+    ----------
+    vol_dict : dict
+        c, i, j, k -> vol
+    den_dict : dict
+        c -> density
+
+    Returns
+    -------
+    masses : dict
+        c, i, j, k -> mass
+    """
+    masses = {}
+    for (c, i, j, k), vol in vol_dict.items():
+        masses[(c, i, j, k)] = vol * den_dict[c]
+    return masses
 
 
 def create_full_tasks(path, fmesh, volumes, materials, densities):
