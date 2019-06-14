@@ -72,10 +72,7 @@ def create_tasks(path, **kwargs):
             path, fmesh, mass_dict, mat_dict, den_dict
         )
     elif kwargs['approach'] == 'simple':
-        cell_to_mat_dict = {(c, m.name()): 1 for c, m in mat_dict.items()}
-        config['material'] = data.SparseData(
-            ('cell', 'material'), (cell_labels, mat_labels), cell_to_mat_dict
-        )
+        config['material'] = cm_matrix(cell_labels, mat_labels, mat_dict)
 
         F0 = np.max(fmesh._data)
         M0 = max(mass_dict.values())
@@ -83,7 +80,7 @@ def create_tasks(path, **kwargs):
 
         config['alpha'] = data.SparseData(
             ('n_erg', 'i', 'j', 'k'), 
-            (range(len(ebins) - 1), i_labels, j_labels, k_labels),
+            (n_labels, i_labels, j_labels, k_labels),
             data.sparse.COO.from_numpy(fmesh._data / F0)
         )
         config['beta'] = data.SparseData(
@@ -100,6 +97,14 @@ def create_tasks(path, **kwargs):
     config['task_list'] = task_list
     config['index_output'] = index_output
     return config
+
+
+def cm_matrix(cell_labels, mat_labels, mat_dict):
+    cell_to_mat_dict = {(c, m.name()): 1 for c, m in mat_dict.items()}
+    result = data.SparseData(
+        ('cell', 'material'), (cell_labels, mat_labels), cell_to_mat_dict
+    )
+    return result
 
 
 def read_mcnp_input(inp_filename):

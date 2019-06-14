@@ -9,20 +9,26 @@ from r2s_rfda import launcher, fetch
 
 @pytest.fixture(scope='module')
 def full_calculations():
-    path = Path('test/full1')
+    path = Path('test/full2')
     if not (path / 'settings.cfg').exists():
         launcher.prepare_task(path, 'config.ini')
+        launcher.run_task(path, 6)
     return path
-    
 
-def test_run(full_calculations):
-    launcher.run_task(full_calculations, 6)
-    
 
-@pytest.mark.parametrize('axes, labels, data', [
+@pytest.fixture(scope='module')
+def simple_calculations():
+    path = Path('test/simple2')
+    if not (path / 'settings.cfg').exists():
+        launcher.prepare_task(path, 'config.ini')
+        launcher.run_task(path, 6)
+    return path
+       
+
+@pytest.mark.parametrize('axes, labels, outdata', [
    (('time', 'g_erg', 'cell', 'xbins', 'ybins', 'zbins'),
     (
-        (31536000, 31536600, 31540200, 31623000, 32400600, 63072600),
+        (31558000, 31558600, 31562200, 31645000, 32422600, 63094600),
         (0, 0.01, 0.02, 0.05, 0.10, 0.20, 0.30, 0.40, 0.60, 0.80, 1.00, 1.22,
           1.44, 1.66, 2.00, 2.50, 3.00, 4.00, 5.00, 6.50, 8.00, 10.00, 12.00,
           14.00, 20.00
@@ -98,16 +104,64 @@ def test_run(full_calculations):
     ])
    )
 ])
-def test_full_fetch(full_calculations, axes, labels, data):
+def test_full_fetch(full_calculations, axes, labels, outdata):
     launcher.fetch_task(full_calculations)
     data = fetch.load_data(full_calculations, 'gamma')
     assert data.axes == axes
     assert data.labels == labels
     data_arr = data.data[-4:, :, :, :, 0, 0]
-    for i in range(data.shape[0]):
-        for j in range(data.shape[1]):
+    for i in range(outdata.shape[0]):
+        for j in range(outdata.shape[1]):
             arr = data_arr[j, :, :, i]
             val = arr.sum()
-            assert val == pytest.approx(data[i, j], 0.1)
+            if not (val / 400 == pytest.approx(outdata[i, j], 0.1)):
+                print(i, j, val/400, outdata[i, j])
 
+    assert False
+            
+
+def test_simple_fetch(full_calculations, simple_calculations):
+    launcher.fetch_task(simple_calculations)
+    launcher.fetch_task(full_calculations)
+    beta = launcher.load_config(simple_calculations)['beta']
+    alpha = launcher.load_config(simple_calculations)['alpha']
+    simple = fetch.load_data(simple_calculations, 'atoms')
+    full = fetch.load_data(full_calculations, 'atoms')
+    assert simple.axes == full.axes
+    # assert simple.labels == full.labels
+    assert simple.data.shape == full.data.shape
+    # assert simple.data.nnz == full.data.nnz
+    cnt = 0
+    cnt_c = 0
+    print(full.labels)
+    for index in zip(*simple.data.nonzero()):
+        if simple.data[index] != pytest.approx(full.data[index], 1.e-4):
+            print(index, simple.data[index], full.data[index], (simple.data[index] - full.data[index]) / full.data[index], beta.data[index[2:]])
+            cnt += 1
+        else:
+            cnt_c += 1
+    print(cnt, cnt_c, full.data.nnz)
+    assert False
+
+
+@pytest.mark.parametrize('results', [
+    {
+        2: (1.0000, range(0, 10)),
+        3: (0.1282, range(10, 20)),
+        4: (1.0000, range(20, 30)),
+        5: (0.1282, range(30, 40)),
+        6: (1.0000, range(40, 50)),
+        7: (0.1282, range(50, 60))
+    }
+])
+def test_beta(simple_calculations, results):
+    beta = launcher.load_config(simple_calculations)['beta']
+    # assert beta.data.nnz == 60
+    for c, i, j, k in zip(*beta.data.nonzero()):
+        cn = beta.labels[0][c]
+        print(cn, i, j, k, beta.data[c, i, j, k])
+        if i in results[cn][1]:
+            assert beta.data[c, i, j, k] == pytest.approx(results[cn][0], 0.1)
+        else:
+            assert beta.data[c, i, j, k] < results[cn][0] * 1.e-1
 

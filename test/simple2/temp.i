@@ -3,7 +3,7 @@ CLOBBER
 GETXS 0
 GETDECAY 0
 FISPACT
-* FNS 5 Minutes Inconel-600
+* FULL TEST
 {material}
 MIND 1E3
 HALF
