@@ -123,25 +123,43 @@ def test_full_fetch(full_calculations, axes, labels, outdata):
 def test_simple_fetch(full_calculations, simple_calculations):
     launcher.fetch_task(simple_calculations)
     launcher.fetch_task(full_calculations)
-    beta = launcher.load_config(simple_calculations)['beta']
-    alpha = launcher.load_config(simple_calculations)['alpha']
-    simple = fetch.load_data(simple_calculations, 'atoms')
-    full = fetch.load_data(full_calculations, 'atoms')
+
+    simple = fetch.load_data(simple_calculations, 'gamma')
+    full = fetch.load_data(full_calculations, 'gamma')
+
     assert simple.axes == full.axes
-    # assert simple.labels == full.labels
-    assert simple.data.shape == full.data.shape
+    assert simple.labels == full.labels
+
+    #print(' '.join(simple.labels[1]))
+    #print(' ---------------------- ')
+    #print(' '.join(full.labels[1]))
+    #nucs = set(simple.labels[1]).union(full.labels[1])
+    #for n in sorted(nucs):
+    #    if n not in full.labels[1]:
+    #        f = 0
+    #    else:
+    #        i = full.labels[1].index(n)
+    #        f = full.data[3, i, 0, 0, 1, 0]
+    #    if n not in simple.labels[1]:
+    #        s = 0
+    #    else:
+    #        i = simple.labels[1].index(n)
+    #        s = simple.data[3, i, 0, 0, 1, 0]
+    #    print('{0:5}  {1:.2e} {2:.2e}'.format(n, f, s))
+    #assert simple.data.shape == full.data.shape
     # assert simple.data.nnz == full.data.nnz
     cnt = 0
     cnt_c = 0
     print(full.labels)
     for index in zip(*simple.data.nonzero()):
-        if simple.data[index] != pytest.approx(full.data[index], 1.e-4):
-            print(index, simple.data[index], full.data[index], (simple.data[index] - full.data[index]) / full.data[index], beta.data[index[2:]])
-            cnt += 1
-        else:
-            cnt_c += 1
-    print(cnt, cnt_c, full.data.nnz)
-    assert False
+        tot_s = simple.data[index[0], :, index[2], index[3], index[4], index[5]].sum()
+        tot_f = simple.data[index[0], :, index[2], index[3], index[4], index[5]].sum()
+        print(tot_s, tot_f)
+        assert tot_s == pytest.approx(tot_f, 1.e-4)
+        if simple.data[index] / tot_s >= 1.e-2 and tot_s > 1000:
+            assert simple.data[index] == pytest.approx(full.data[index], 1.e-2)
+        elif simple.data[index] / tot_s >= 1.e-5 and tot_s > 1000:
+            assert simple.data[index] == pytest.approx(full.data[index], 1.e-1)
 
 
 @pytest.mark.parametrize('results', [
