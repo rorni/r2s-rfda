@@ -5,10 +5,9 @@ GETDECAY 0
 FISPACT
 * FULL TEST
 {material}
-MIND 1E0
 HALF
 HAZARDS
-TOLERANCE 0 1.0e-3 1.e-9
+TOLERANCE 0 1.0e-12 1.e-12
 << -----irradiation phase----- >>
 FLUX    0.05E+00
 TIME 1 YEARS ATOMS
