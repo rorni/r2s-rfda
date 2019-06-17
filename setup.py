@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='r2s_rfda',
-    version='0.1',
+    version='0.2',
     packages=find_packages(),
     install_requires=['sparse', 'pypact', 'mckit==0.1.2'],
     dependency_links=['git+ssh://git@github.com/rorni/mckit.git#egg=mckit-0.1.2'],
