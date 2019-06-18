@@ -6,7 +6,7 @@ import mckit.source as mcs
 from . import data
 
 
-def create_source(gamma_data, timelab, start_distr=1):
+def create_source(gamma_data, timelab, start_distr=1, offset=None):
     """Creates MCNP SDEF for gamma source.
 
     Parameters
@@ -25,6 +25,8 @@ def create_source(gamma_data, timelab, start_distr=1):
     """
     label_index = gamma_data.axes.index('time')
     time_labels = gamma_data.labels[label_index]
+    if offset:
+        timelab += time_labels[offset]
     closest_lab = find_closest(timelab, time_labels)
     if closest_lab != timelab:
         print('Choosing the closest time label available: {0}'.format(closest_lab))

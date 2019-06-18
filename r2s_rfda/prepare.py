@@ -9,6 +9,7 @@ from mckit.material import AVOGADRO
 
 from . import template
 from . import data
+from . import utils
 
 
 def create_tasks(path, **kwargs):
@@ -31,7 +32,7 @@ def create_tasks(path, **kwargs):
     fmesh = read_fmesh_tally(kwargs['fmesh_name'], kwargs['tally_name'])
 
     # set templates
-    init_templates(
+    zero_index = init_templates(
         kwargs['inventory'], kwargs['norm_flux'], kwargs['libs'], 
         kwargs['libxs'], fmesh._data.shape[0]
     )
@@ -62,7 +63,8 @@ def create_tasks(path, **kwargs):
         'mat_labels': mat_labels, 
         'approach': kwargs['approach'],
         'en_labels': n_labels,
-        'i_labels': i_labels, 'j_labels': j_labels, 'k_labels': k_labels
+        'i_labels': i_labels, 'j_labels': j_labels, 'k_labels': k_labels,
+        'zero': zero_index
     }
 
     # Create input files
@@ -124,6 +126,7 @@ def init_templates(inv_filename, norm_flux, libs, libxs, nerg_groups):
     template.init_inventory_template(text, norm_flux)
     template.init_files_template(libs)
     template.init_collapse_template(libxs, nerg_groups)
+    return utils.find_zero_step(text)
 
 
 def calculate_volumes(cells, mesh, min_volume):

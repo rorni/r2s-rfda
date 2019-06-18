@@ -127,7 +127,10 @@ def main():
     elif command['action'] == 'fetch':
         fetch_task(path)
     elif command['action'] == 'source':
-        create_source(path, command['time'], command['distribution'], command['zero'])
+        create_source(
+            path, command['time'], command['source'], 
+            command['distribution'], command['zero']
+        )
 
 
 def fetch_task(path):
@@ -141,15 +144,15 @@ def run_task(path, threads):
     run.run_tasks(task_list, threads=threads)
 
 
-def create_source(path, time, sd, zero):
+def create_source(path, time, sdefname, sd, zero):
     config = load_config(path)
     gamma_data = fetch.load_data(path, 'gamma')
-    time_m = utils.convert_time_literal(time)
-    print(gamma_data.axes, gamma_data.labels)
     if zero:
-        pass
-    sdef = source.create_source(gamma_data, time_m, start_distr=sd)
-    with open(path / 'sdef.i', 'w') as f:
+        zindex = config['zero']
+    else:
+        zindex = None
+    sdef = source.create_source(gamma_data, time, start_distr=sd, offset=zindex)
+    with open(path / sdefname, 'w') as f:
         f.write(sdef)
 
 

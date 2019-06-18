@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+from pkg_resources import resource_filename
 
 from r2s_rfda import utils
 
@@ -15,3 +16,22 @@ def test_convert_time_literal(timelit, answer):
     result = utils.convert_time_literal(timelit)
     assert result == answer
     assert isinstance(result, int)
+
+
+def load_file(filename):
+    with open(resource_filename(__name__, 'templates/' + filename)) as f:
+        template = f.read()
+    return template
+
+
+@pytest.mark.parametrize('filename, answer', [
+    ('input_0.i', 37),
+    ('input_1.i', 43),
+    ('input_2.i', 139),
+    ('input_3.i', 139),
+    ('input_4.i', None)
+])
+def test_find_zero_step(filename, answer):
+    text = load_file(filename)
+    result = utils.find_zero_step(text)
+    assert result == answer
