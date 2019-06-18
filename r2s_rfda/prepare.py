@@ -3,6 +3,7 @@
 from collections import deque, defaultdict
 
 import numpy as np
+from click import progressbar
 from mckit import read_mcnp
 from mckit.parser.meshtal_parser import read_meshtal
 from mckit.material import AVOGADRO
@@ -147,15 +148,18 @@ def calculate_volumes(cells, mesh, min_volume):
         A dictionary of cell volumes. 
     """
     volumes = defaultdict(int)
-    for i in range(mesh.shape[0]):
-        for j in range(mesh.shape[1]):
-            for k in range(mesh.shape[2]):
-                box = mesh.get_voxel(i, j, k)
-                for c in cells:
-                    vol = c.shape.volume(box=box, min_volume=min_volume)
-                    if vol > 0:
-                        index = (c.name(), i, j, k)
-                        volumes[index] += vol
+    nx, ny, nz = mesh.shape
+    with progressbar(length=nx*ny*nz) as bar:
+        for i in range(mesh.shape[0]):
+            for j in range(mesh.shape[1]):
+                for k in range(mesh.shape[2]):
+                    box = mesh.get_voxel(i, j, k)
+                    for c in cells:
+                        vol = c.shape.volume(box=box, min_volume=min_volume)
+                        if vol > 0:
+                            index = (c.name(), i, j, k)
+                            volumes[index] += vol
+                    bar.update(i * ny * nz + j * nz + k)
     return volumes
 
 
