@@ -337,6 +337,9 @@ def prepare_folder(path, name, ebins, spectrum):
     collapse = folder / 'collapse.i'
     collapse.write_text(template.fispact_collapse())
     arb_flux = folder / 'arb_flux'
+
+    ebins = ebins.copy()
+    ebins[0] = 1.e-11
     arb_flux.write_text(template.create_arbflux_text(ebins, spectrum))
 
     return folder, ['collapse']
