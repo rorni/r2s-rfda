@@ -1,7 +1,94 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from scipy.sparse import csr_matrix
 from collections import defaultdict
+
+
+class GammaFrame:
+    """Represents time frame of gamma intensity data.
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Gamma data.
+    sindex : SpatialIndex
+        Spatial data index.
+    gbins : array_like
+        Gamma energy bin boundaries.
+    mesh : RectMesh
+        Spatial mesh.
+
+    Methods
+    -------
+
+    """
+    def __init__(self, data, sindex, timelabel, gbins, mesh):
+        self._data = csr_matrix(data)
+        self._sindex = sindex
+        self._timelabel = timelabel
+        self._gbins = gbins
+        self._mesh = mesh
+
+    @property
+    def xbins(self):
+        return self._mesh._xbins
+
+    @property
+    def ybins(self):
+        return self._mesh._ybins
+    
+    @property
+    def zbins(self):
+        return self._mesh._zbins
+
+    @property
+    def mesh(self):
+        return self._mesh
+    
+    @property
+    def gbins(self):
+        return self._gbins
+
+    @property
+    def timelabel(self):
+        return self._timelabel
+
+    @property
+    def spatial_index(self):
+        return self._sindex
+
+    def __getitem__(self, index):
+        """Gets element.
+
+        Parameters
+        ----------
+        index : tuple(int)
+            Index of element. g, c, i, j, k.
+        
+        Returns
+        -------
+        value : float
+            Value.
+        """
+        g, c, i, j, k = index
+        q = self._sindex.indices(c=c, i=i, j=j, k=k)
+        return self._data[g, q]  
+
+    def iter_nonzero(self):
+        """Iterates through all nonzero elements of the gamma data.
+
+        Returns
+        -------
+        index : tuple(int)
+            Index of the data. g, c, i, j, k.
+        value : float
+            Value.
+        """
+        for g, q in zip(*self._data.nonzero()):
+            c, i, j, k = self._sindex.label(q)
+            v = self._data[g, q]
+            yield (g, c, i, j, k), v
 
 
 class SpatialIndex:
@@ -30,6 +117,9 @@ class SpatialIndex:
             self._i_labels[i].add(q)
             self._j_labels[j].add(q)
             self._k_labels[k].add(q)  
+    
+    def cells(self):
+        return tuple(sorted(self._c_labels.keys()))
 
     def __len__(self):
         return len(self._labels)     

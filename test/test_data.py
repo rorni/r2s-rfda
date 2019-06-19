@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-
+import numpy as np
+from mckit.fmesh import RectMesh
 
 from r2s_rfda import data
 
@@ -18,6 +19,51 @@ def index():
         (5, 0, 0, 4)   # 5
     ]
     return data.SpatialIndex(indices)
+
+
+@pytest.fixture(scope='module')
+def gamma(index):
+    array = np.array([
+        [1, 2, 0, 0, 3, 0, 0], 
+        [0, 0, 4, 5, 0, 6, 7], 
+        [0, 8, 0, 0, 9, 0, 0]
+    ])
+    gbins = [0, 1, 5, 10]
+    mesh = RectMesh([0, 1, 2, 3], [-1, 1], [-1, 0, 1, 2, 3, 4, 6])
+    return data.GammaFrame(array, index, 1200, gbins, mesh)
+
+
+def test_gamma_bins(gamma):
+    result = gamma.xbins
+    np.testing.assert_array_equal(result, [0, 1, 2, 3])
+    result = gamma.ybins
+    np.testing.assert_array_equal(result, [-1, 1])
+    result = gamma.zbins
+    np.testing.assert_array_equal(result, [-1, 0, 1, 2, 3, 4, 6])
+    result = gamma.gbins
+    np.testing.assert_array_equal(result, [0, 1, 5, 10])
+    assert gamma.timelabel == 1200
+
+
+@pytest.mark.parametrize('ind, answer', [
+    ((0, 1, 1, 0, 3), 1), ((0, 2, 1, 0, 3), 2), ((0, 2, 2, 0, 5), 0),
+    ((2, 2, 1, 0, 3), 8)
+])
+def test_gamma_getitem(gamma, ind, answer):
+    result = gamma[ind]
+    assert result == answer
+
+
+def test_gamma_iter_nonzero(gamma):
+    values = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    indices = [
+        (0, 1, 1, 0, 3), (0, 2, 1, 0, 3), (0, 4, 0, 0, 5), (1, 2, 2, 0, 5),
+        (1, 4, 0, 0, 4), (1, 5, 0, 0, 4), (1, 5, 1, 0, 3), (2, 2, 1, 0, 3),
+        (2, 4, 0, 0, 5)
+    ]
+    for i, (ind, v) in enumerate(gamma.iter_nonzero()):
+        assert ind == indices[i]
+        assert v == values[i]
 
 
 @pytest.mark.parametrize('labels, answer', [
@@ -47,8 +93,13 @@ def test_label(index, ind, answer):
     assert result == answer
 
 
-def test_index_lenght(index):
+def test_index_length(index):
     assert len(index) == 7
+
+
+def test_index_cells(index):
+    result = index.cells()
+    assert result == (1, 2, 4, 5)
 
 
 """ @pytest.mark.parametrize('axes, labels, sdata, answer', [
