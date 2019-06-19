@@ -10,7 +10,7 @@ from click import progressbar
 from . import data
 
 
-def collect(path, config):
+def collect(path, config, index):
     """Collects all data from inventory files and writes total files on disk.
 
     Parameters
@@ -19,6 +19,8 @@ def collect(path, config):
         Path to folder, where to store results.
     config : dict
         Dictionary of configuration data.
+    index : int
+        Start time index for data fetch.
     """
     A_dict = {}
     N_dict = {}
@@ -27,7 +29,7 @@ def collect(path, config):
     print('Start data collection ...')
     with progressbar(config['index_output'].items()) as bar:
         for index, casepath in bar:
-            time_labels, ebins, atoms, activity, gamma_yield = read_fispact_output(casepath)
+            time_labels, ebins, atoms, activity, gamma_yield = read_fispact_output(casepath, index)
             for (t, nuc), act in activity.items():
                 A_dict[(t, nuc, *index)] = act
                 nuclides.add(nuc)
@@ -137,13 +139,15 @@ def apply_superposition(tensor, material, alpha, beta):
     return tensor
 
 
-def read_fispact_output(path):
+def read_fispact_output(path, index=None):
     """Reads FISPACT output file.
 
     Parameters
     ----------
     path : Path
         Path to output file.
+    index : int
+        Starting index for data collection.
 
     Returns
     -------
@@ -169,8 +173,11 @@ def read_fispact_output(path):
     atoms = {}
     activity = {}
     gamma_yield = {}
+
     for i, ts in enumerate(idata):
         durations.append(ts.duration)
+        if i < index:
+            continue
         time_labels.append(int(np.array(durations).sum()))
         gamma_yield[time_labels[-1]] = np.array(ts.gamma_spectrum.values) / eners
         for nuc in ts.nuclides:

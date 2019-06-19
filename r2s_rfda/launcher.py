@@ -95,6 +95,10 @@ def arg_parser():
     )
 
     # fetch arguments
+    parser_fetch.add_argument(
+        '-z', '--zero', action='store_true', 
+        help='fetchs data only for cooling phase'
+    )
 
     # source arguments
     parser_source.add_argument(
@@ -125,7 +129,7 @@ def main():
     elif command['action'] == 'run':
         run_task(path, command['threads'])
     elif command['action'] == 'fetch':
-        fetch_task(path)
+        fetch_task(path, command['zero'])
     elif command['action'] == 'source':
         create_source(
             path, command['time'], command['source'], 
@@ -133,9 +137,13 @@ def main():
         )
 
 
-def fetch_task(path):
+def fetch_task(path, zero):
     config = load_config(path)
-    fetch.collect(path, config)
+    if zero and (config['zero'] is not None):
+        index = config['zero'] + 1
+    else: 
+        index = 0
+    fetch.collect(path, config, index)
 
 
 def run_task(path, threads):
