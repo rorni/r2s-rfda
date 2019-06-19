@@ -47,6 +47,10 @@ def test_label(index, ind, answer):
     assert result == answer
 
 
+def test_index_lenght(index):
+    assert len(index) == 7
+
+
 """ @pytest.mark.parametrize('axes, labels, sdata, answer', [
     (
         ('cell', 'i', 'j'), ((4, 2, 3, 1), (0, 1, 2), (0, 1)),

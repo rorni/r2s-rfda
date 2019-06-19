@@ -29,7 +29,10 @@ class SpatialIndex:
             self._c_labels[c].add(q)
             self._i_labels[i].add(q)
             self._j_labels[j].add(q)
-            self._k_labels[k].add(q)       
+            self._k_labels[k].add(q)  
+
+    def __len__(self):
+        return len(self._labels)     
 
     def label(self, index):
         """Gets labels, that correspond to the index.
@@ -73,5 +76,6 @@ class SpatialIndex:
         if k:
             candidates.intersection_update(self._k_labels.get(k, set()))
         return list(sorted(candidates))
+
 
 
