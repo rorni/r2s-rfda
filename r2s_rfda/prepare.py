@@ -159,7 +159,7 @@ def calculate_volumes(cells, mesh, min_volume):
                         if vol > 0:
                             index = (c.name(), i, j, k)
                             volumes[index] += vol
-                    bar.update(i * ny * nz + j * nz + k)
+                    bar.update(1)
     return volumes
 
 
