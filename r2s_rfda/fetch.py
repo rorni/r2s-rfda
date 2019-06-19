@@ -10,7 +10,7 @@ from click import progressbar
 from . import data
 
 
-def collect(path, config, index):
+def collect(path, config, start_index):
     """Collects all data from inventory files and writes total files on disk.
 
     Parameters
@@ -19,7 +19,7 @@ def collect(path, config, index):
         Path to folder, where to store results.
     config : dict
         Dictionary of configuration data.
-    index : int
+    start_index : int
         Start time index for data fetch.
     """
     A_dict = {}
@@ -29,7 +29,7 @@ def collect(path, config, index):
     print('Start data collection ...')
     with progressbar(config['index_output'].items()) as bar:
         for index, casepath in bar:
-            time_labels, ebins, atoms, activity, gamma_yield = read_fispact_output(casepath, index)
+            time_labels, ebins, atoms, activity, gamma_yield = read_fispact_output(casepath, start_index)
             for (t, nuc), act in activity.items():
                 A_dict[(t, nuc, *index)] = act
                 nuclides.add(nuc)
@@ -77,11 +77,14 @@ def collect(path, config, index):
     N = create_sparse_data(N_dict, n_axes, n_labels, 'atoms')
     G = create_sparse_data(G_dict, g_axes, g_labels, 'gamma')
 
-    if config['approach'] == 'full':
+    if config['approach'] == 'simple':
         print('Making superposition ...')
         A = apply_superposition(A, config['material'], config['alpha'], config['beta'])
+        print('  Activity - done')
         N = apply_superposition(N, config['material'], config['alpha'], config['beta'])
+        print('  Atoms - done')
         G = apply_superposition(G, config['material'], config['alpha'], config['beta'])
+        print('  Gamma - done')
 
     print('Replacing axes ...')
     A = A.replace_axes(
