@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-import sparse
+import numpy as np
+from mckit.fmesh import RectMesh
 
 from r2s_rfda import source
 from r2s_rfda import data
@@ -24,7 +25,7 @@ sources = [
 """C total gamma intensity = 1.05000e+02
 SDEF PAR=2 EFF=0.01 CEL=D1 ERG=FCEL D2 X=FCEL D3 Y=FCEL D4 Z=FCEL D5
 SI1 L 300 300 200 300 200 300 200
-SP1 D 10.0 15.0 10.0 15.0 20.0 20.0 15.0
+SP1 D 10 15 10 15 20 20 15
 DS2 S 6 6 7 7 7 7 7
 DS3 S 8 9 8 8 8 9 9
 DS4 S 10 10 10 10 11 10 11
@@ -46,11 +47,11 @@ SP12 D 0 1""",
 
 """C total gamma intensity = 1.05000e+02
 SDEF PAR=2 EFF=0.01 CEL=D1 ERG=FCEL D2 X=FCEL D3 Y=FCEL D4 Z=FCEL D5
-SI1 L 300 300 200 300 200 300 200
-SP1 D 10.0 15.0 10.0 15.0 20.0 20.0 15.0
+SI1 L 300 300 200 200 200 300 300
+SP1 D 10 15 10 20 15 15 20
 DS2 S 6 6 7 7 7 7 7
-DS3 S 8 9 8 8 8 9 9
-DS4 S 10 10 10 10 11 10 11
+DS3 S 8 9 8 8 9 8 9
+DS4 S 10 10 10 11 11 10 10
 DS5 S 12 12 12 12 12 12 12
 SI6 H 0 1
 SP6 D 0 1
@@ -69,11 +70,11 @@ SP12 D 0 1""",
 
 """C total gamma intensity = 2.40000e+01
 SDEF PAR=2 EFF=0.01 CEL=D1 ERG=FCEL D2 X=FCEL D3 Y=FCEL D4 Z=FCEL D5
-SI1 L 300 300 200 300 200 300 200
-SP1 D 2.5 3.0 2.5 3.0 5.0 5.0 3.0
+SI1 L 300 300 200 200 200 300 300
+SP1 D 2.5 3.0 2.5 5.0 3.0 3.0 5.0
 DS2 S 6 6 7 7 7 7 7
-DS3 S 8 9 8 8 8 9 9
-DS4 S 10 10 10 10 11 10 11
+DS3 S 8 9 8 8 9 8 9
+DS4 S 10 10 10 11 11 10 10
 DS5 S 12 12 12 12 12 12 12
 SI6 H 0 1
 SP6 D 0 1
@@ -91,73 +92,35 @@ SI12 H 2 5
 SP12 D 0 1"""
 ]
 
-@pytest.mark.parametrize('gamma_data, timelab, start_distr, src_index', [
-    (data.SparseData(
-        ('time', 'g_erg', 'xbins', 'ybins', 'zbins', 'cell'),
-        ((3, 10, 15, 20), (0, 1, 20), (-1, 1, 3), (-1, 2, 4), (2, 5), (200, 300)),
-        sparse.COO(
-            [
-                [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2],
-                [1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1],
-                [0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1],
-                [0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1]
-            ],
-            [10, 20, 15, 10, 15, 15, 20, 5, 10, 7.5, 5, 7.5, 7.5, 10, 2.5, 5, 3, 2.5, 3, 3, 5],
-            shape=(4, 2, 2, 2, 1, 2)
-        )
-     ), 3, 1, 0
+@pytest.mark.parametrize('gamma_data, start_distr, src_index', [
+    (data.GammaFrame(
+        np.array([[0, 0, 0, 10, 15], [10, 20, 15, 15, 20]]), 
+        data.SpatialIndex([
+            (200, 0, 0, 0), (200, 0, 1, 0), (200, 1, 1, 0), (300, 0, 0, 0),
+            (300, 1, 0, 0)
+        ]), 3, [0, 1, 20], RectMesh((-1, 1, 3), (-1, 2, 4), (2, 5))
+     ), 1, 1
     ),
-    (data.SparseData(
-        ('g_erg', 'xbins', 'ybins', 'time', 'zbins', 'cell'),
-        ((0, 1, 20), (-1, 1, 3), (-1, 2, 4), (3, 10, 15, 20), (2, 5), (200, 300)),
-        sparse.COO(
-            [
-                [1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1],
-                [0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1],
-                [0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1]
-            ],
-            [10, 20, 15, 10, 15, 15, 20, 5, 10, 7.5, 5, 7.5, 7.5, 10, 2.5, 5, 3, 2.5, 3, 3, 5],
-            shape=(2, 2, 2, 4, 1, 2)
-        )
-     ), 3, 1, 1
+    (data.GammaFrame(
+        np.array([[0, 0, 0, 10, 15], [10, 20, 15, 15, 20]]), 
+        data.SpatialIndex([
+            (200, 0, 0, 0), (200, 0, 1, 0), (200, 1, 1, 0), (300, 0, 0, 0),
+            (300, 1, 0, 0)
+        ]), 3, [0, 1, 20], RectMesh((-1, 1, 3), (-1, 2, 4), (2, 5))
+     ), 1, 1
     ),
-    (data.SparseData(
-        ('time', 'g_erg', 'xbins', 'ybins', 'zbins', 'cell'),
-        ((3, 10, 15, 20), (0, 1, 20), (-1, 1, 3), (-1, 2, 4), (2, 5), (200, 300)),
-        sparse.COO(
-            [
-                [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2],
-                [1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1],
-                [0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1],
-                [0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1]
-            ],
-            [10, 20, 15, 10, 15, 15, 20, 5, 10, 7.5, 5, 7.5, 7.5, 10, 2.5, 5, 3, 2.5, 3, 3, 5],
-            shape=(4, 2, 2, 2, 1, 2)
-        )
-     ), 15, 1, 2
+    (data.GammaFrame(
+        np.array([[0, 0, 0, 2.5, 3], [2.5, 5, 3, 3, 5]]), 
+        data.SpatialIndex([
+            (200, 0, 0, 0), (200, 0, 1, 0), (200, 1, 1, 0), (300, 0, 0, 0),
+            (300, 1, 0, 0)
+        ]), 3, [0, 1, 20], RectMesh((-1, 1, 3), (-1, 2, 4), (2, 5))
+     ), 1, 2
     )   
 ])
-def test_create_source(gamma_data, timelab, start_distr, src_index):
+def test_create_source(gamma_data, start_distr, src_index):
     answer = sources[src_index]
-    sdef = source.create_source(gamma_data, timelab, start_distr=start_distr)
+    sdef = source.create_source(gamma_data, start_distr=start_distr)
     print(sdef)
     assert sdef == answer
 
-
-@pytest.mark.parametrize('t, time_labels, answer', [
-    (349, [0, 5, 349, 350, 400], 349),
-    (0, [0, 4, 5, 6, 7], 0),
-    (0, [1, 2, 3, 4, 5], 1),
-    (349, [0, 5, 340, 350, 400], 350),
-    (349, [0, 5, 340, 360, 400], 340)
-])
-def test_find_closest(t, time_labels, answer):
-    result = source.find_closest(t, time_labels)
-    assert result == answer
