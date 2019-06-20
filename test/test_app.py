@@ -106,13 +106,18 @@ def simple_calculations():
 ])
 def test_full_fetch(full_calculations, axes, labels, outdata):
     launcher.fetch_task(full_calculations)
-    data = fetch.load_data(full_calculations, 'gamma')
-    assert data.axes == axes
-    assert data.labels == labels
-    data_arr = data.data[-4:, :, :, :, 0, 0]
-    for i in range(outdata.shape[0]):
-        for j in range(outdata.shape[1]):
-            arr = data_arr[j, :, :, i]
+    
+    f_conf = fetch.load_result_config(full_calculations)
+    full = {}
+    for t, path in f_conf['gamma'].items():
+        full[t] = fetch.load_data(path)
+    times = list(sorted(full.keys()))
+    assert times == labels[0]
+    
+    for j in range(outdata.shape[1]):
+        data = full[times[j]]
+        for i in range(outdata.shape[0]):
+            arr = data[:, 0, 0, 0, i]
             val = arr.sum()
             if not (val / 400 == pytest.approx(outdata[i, j], 0.1)):
                 print(i, j, val/400, outdata[i, j])
@@ -124,12 +129,15 @@ def test_simple_fetch(full_calculations, simple_calculations):
     launcher.fetch_task(simple_calculations)
     launcher.fetch_task(full_calculations)
 
-    simple = fetch.load_data(simple_calculations, 'gamma')
-    full = fetch.load_data(full_calculations, 'gamma')
-
-    assert simple.axes == full.axes
-    assert simple.labels == full.labels
-
+    s_conf = fetch.load_result_config(simple_calculations)
+    f_conf = fetch.load_result_config(full_calculations)
+    simple = {}
+    full = {}
+    for t, path in s_conf['gamma'].items():
+        simple[t] = fetch.load_data(path)
+    for t, path in f_conf['gamma'].items():
+        full[t] = fetch.load_data(path)
+    
     #print(' '.join(simple.labels[1]))
     #print(' ---------------------- ')
     #print(' '.join(full.labels[1]))

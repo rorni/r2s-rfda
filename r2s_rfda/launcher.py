@@ -125,12 +125,15 @@ def main():
     elif command['action'] == 'run':
         run_task(path, command['threads'])
     elif command['action'] == 'fetch':
-        fetch_task(path, command['zero'])
+        fetch_task(path)
     elif command['action'] == 'source':
-        create_source(path, command['time'], command['source'], command['distribution'])
+        create_source(
+            path, command['time'], command['source'], command['distribution'], 
+            command['zero']
+        )
 
 
-def fetch_task(path, zero):
+def fetch_task(path):
     config = load_config(path)
     fetch.collect(path, config)
 
@@ -141,9 +144,12 @@ def run_task(path, threads):
     run.run_tasks(task_list, threads=threads)
 
 
-def create_source(path, time, sdefname, sd):
+def create_source(path, time, sdefname, sd, zero):
+    config = load_config(path)
     result_conf = fetch.load_result_config(path)
     time_labels = list(sorted(result_conf['gamma'].keys()))
+    if zero:
+        time += time_labels[config['zero']]
     closest_lab = utils.find_closest(time, time_labels)
     if closest_lab != time:
         print('Choosing the closest time label available: {0}'.format(closest_lab))
