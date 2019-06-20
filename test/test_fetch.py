@@ -1,84 +1,72 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+import numpy as np
 
 from r2s_rfda import fetch
 from r2s_rfda import data
 
 
-@pytest.mark.parametrize('tensor, material, alpha, beta, answer', [
+@pytest.mark.parametrize('data_dict, shape, mat_labels, answer', [
+    ({(0, 10): 4, (1, 11): 3, (0, 5): 2, (3, 11): 10}, (3, 4), (5, 10, 11), 
+     np.array([[2, 0, 0, 0], [4, 0, 0, 0], [0, 3, 0, 10]]))
+])
+def test_dict_to_array(data_dict, shape, mat_labels, answer):
+    result = fetch.dict_to_array(data_dict, shape, mat_labels)
+    np.testing.assert_array_equal(result, answer)
+
+
+@pytest.mark.parametrize('sindex, mass_coeffs, c2m, mat_labels, answer', [
     (
-        (
-            ('time', 'nuclide', 'n_erg', 'material'),
-            ([10, 20], ['Fe56', 'Co60', 'Al27'], [0, 1, 2, 3], [101, 102]),
-            {
-                (10, 'Fe56', 0, 101): 1, (10, 'Fe56', 1, 101): 2, 
-                (10, 'Fe56', 2, 101): 3, (10, 'Fe56', 3, 101): 4,
-                (10, 'Co60', 0, 101): 10, (10, 'Co60', 1, 101): 9,
-                (10, 'Co60', 2, 101): 8, (10, 'Co60', 3, 101): 7,
-                (10, 'Al27', 0, 102): 20, (10, 'Al27', 1, 102): 10,
-                (20, 'Fe56', 1, 101): 1, (20, 'Fe56', 2, 101): 1.5, 
-                (20, 'Fe56', 3, 101): 2, (20, 'Co60', 0, 101): 5, 
-                (20, 'Co60', 1, 101): 4.5, (20, 'Co60', 2, 101): 4, 
-                (20, 'Co60', 3, 101): 3.5, (20, 'Al27', 0, 102): 10, 
-                (20, 'Al27', 1, 102): 5            
-            }
-        ),
-        (
-            ('cell', 'material'),
-            ([301, 302, 303], [101, 102]),
-            {(301, 101): 1, (302, 101): 1, (303, 102): 1}
-        ),
-        (
-            ('n_erg', 'i', 'j', 'k'),
-            ([0, 1, 2, 3], [0, 1, 2], [0, 1], [0]),
-            {
-                (0, 0, 1, 0): 100, (1, 0, 1, 0): 200, (2, 0, 1, 0): 50,
-                (3, 0, 1, 0): 100, (1, 1, 1, 0): 70, (2, 1, 1, 0): 90,
-                (0, 2, 0, 0): 50, (1, 2, 0, 0): 70, (2, 2, 0, 0): 90,
-                (3, 2, 0, 0): 110, (0, 2, 1, 0): 200, (1, 2, 1, 0): 250,
-                (2, 2, 1, 0): 300, (3, 2, 1, 0): 400
-            }
-        ),
-        (
-            ('cell', 'i', 'j', 'k'), ([301, 302, 303], [0, 1, 2], [0, 1], [0]),
-            {
-                (301, 0, 1, 0): 0.5, (302, 0, 1, 0): 1, (302, 1, 1, 0): 2,
-                (303, 2, 0, 0): 0.4, (303, 2, 1, 0): 3
-            }
-        ),
-        (
-            ('nuclide', 'time', 'cell', 'i', 'j', 'k'),
-            (('Fe56', 'Co60', 'Al27'), (10, 20), (301, 302, 303), (0, 1, 2), (0, 1), (0,)),
-            {
-                (0, 0, 0, 0, 1, 0): (1 * 100 + 2 * 200 + 3 * 50 + 4 * 100) * 0.5,
-                (0, 0, 1, 0, 1, 0): (1 * 100 + 2 * 200 + 3 * 50 + 4 * 100) * 1,
-                (0, 0, 1, 1, 1, 0): (2 * 70 + 3 * 90) * 2,
-                (1, 0, 0, 0, 1, 0): (10 * 100 + 9 * 200 + 8 * 50 + 7 * 100) * 0.5,
-                (1, 0, 1, 0, 1, 0): (10 * 100 + 9 * 200 + 8 * 50 + 7 * 100) * 1,
-                (1, 0, 1, 1, 1, 0): (9 * 70 + 8 * 90) * 2,
-                (2, 0, 2, 2, 0, 0): (20 * 50 + 10 * 70) * 0.4,
-                (2, 0, 2, 2, 1, 0): (20 * 200 + 10 * 250) * 3,
-                (0, 1, 0, 0, 1, 0): (1 * 200 + 1.5 * 50 + 2 * 100) * 0.5,
-                (0, 1, 1, 0, 1, 0): (1 * 200 + 1.5 * 50 + 2 * 100) * 1,
-                (0, 1, 1, 1, 1, 0): (1 * 70 + 1.5 * 90) * 2,
-                (1, 1, 0, 0, 1, 0): (5 * 100 + 4.5 * 200 + 4 * 50 + 3.5 * 100) * 0.5,
-                (1, 1, 1, 0, 1, 0): (5 * 100 + 4.5 * 200 + 4 * 50 + 3.5 * 100) * 1,
-                (1, 1, 1, 1, 1, 0): (4.5 * 70 + 4 * 90) * 2,
-                (2, 1, 2, 2, 0, 0): (10 * 50 + 5 * 70) * 0.4,
-                (2, 1, 2, 2, 1, 0): (10 * 200 + 5 * 250) * 3
-            }
-        )
+        data.SpatialIndex([(1, 0, 0, 0), (2, 2, 3, 1), (2, 0, 0, 0), (1, 1, 2, 1)]),
+        {(1, 0, 0, 0): 0.5, (2, 2, 3, 1): 2.0, (2, 0, 0, 0): 0.25, (1, 1, 2, 1): 3.0},
+        {1: 10, 2: 20}, (10, 20),  np.array([[0.5, 3.0, 0, 0], [0, 0, 0.25, 2.0]])
     )
 ])
-def test_apply_superposition(tensor, material, alpha, beta, answer):
-    tensor = data.SparseData(*tensor)
-    material = data.SparseData(*material)
-    alpha = data.SparseData(*alpha)
-    beta = data.SparseData(*beta)
-    result = fetch.apply_superposition(tensor, material, alpha, beta)
-    assert result.axes == answer[0]
-    assert result.labels == answer[1]
-    assert result.data.nnz == len(answer[2])
-    for index, value in answer[2].items():
-        assert result.data[index] == value
+def test_flatten_mass_coeffs(sindex, mass_coeffs, c2m, mat_labels, answer):
+    result = fetch.flatten_mass_coeffs(sindex, mass_coeffs, c2m, mat_labels)
+    np.testing.assert_array_almost_equal(result, answer)
+
+
+@pytest.mark.parametrize('sindex, flux_coeffs, answer', [
+    (
+        data.SpatialIndex([(1, 0, 0, 0), (2, 2, 3, 1), (2, 0, 0, 0), (1, 1, 2, 1)]),
+        np.array([
+            [
+                [[72, 1], [2, 3], [4, 5], [6, 7]],
+                [[8, 9], [10, 11], [12, 13], [14, 15]],
+                [[16, 17], [18, 19], [20, 21], [22, 23]] 
+            ],
+            [
+                [[24, 25], [26, 27], [28, 29], [30, 31]],
+                [[32, 33], [34, 35], [36, 37], [38, 39]],
+                [[40, 41], [42, 43], [44, 45], [46, 47]] 
+            ],
+            [
+                [[48, 49], [50, 51], [52, 53], [54, 55]],
+                [[56, 57], [58, 59], [60, 61], [62, 63]],
+                [[64, 65], [66, 67], [68, 69], [70, 71]] 
+            ]
+        ]),
+        np.array([
+            [72, 13, 72, 23],
+            [24, 37, 24, 47],
+            [48, 61, 48, 71]
+        ])
+    )
+])
+def test_flux_coeffs(sindex, flux_coeffs, answer):
+    result = fetch.flatten_flux_coeffs(sindex, flux_coeffs)
+    np.testing.assert_array_equal(result, answer)
+
+
+@pytest.mark.parametrize('data_dict, labels, answer', [
+    (
+        {10: np.array([1, 2, 3, 4]), 30: np.array([5, 6, 7, 8]), 20: np.array([9, 10, 11, 12])},
+        (10, 20, 30),
+        np.array([[1., 2., 3., 4.], [9., 10., 11., 12.], [5., 6., 7., 8.]])
+    )
+])
+def test_produce_slice_array(data_dict, labels, answer):
+    result = fetch.produce_slice_array(data_dict, labels)
+    np.testing.assert_array_equal(result, answer)

@@ -167,5 +167,7 @@ class SpatialIndex:
             candidates.intersection_update(self._k_labels.get(k, set()))
         return list(sorted(candidates))
 
+    def __iter__(self):
+        return iter(self._labels)
 
 

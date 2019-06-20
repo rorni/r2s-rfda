@@ -49,23 +49,10 @@ def create_tasks(path, **kwargs):
     den_dict = get_densities(cells)
     mass_dict = get_masses(vol_dict, den_dict)
 
-    # Label creation
-    cell_labels = sorted([c.name() for c in cells])
-    mat_labels = sorted(list(set(m.name() for m in mat_dict.values())))
-    i_labels = list(range(fmesh.mesh.shape[0]))
-    j_labels = list(range(fmesh.mesh.shape[1]))
-    k_labels = list(range(fmesh.mesh.shape[2]))
-    n_labels = list(range(fmesh._data.shape[0]))
-
     # Set configuration
     config = {
-        'xbins': fmesh.mesh._xbins, 'ybins': fmesh.mesh._ybins, 
-        'zbins': fmesh.mesh._zbins, 'cell_labels': cell_labels, 
-        'mat_labels': mat_labels, 
-        'approach': kwargs['approach'],
-        'en_labels': n_labels,
-        'i_labels': i_labels, 'j_labels': j_labels, 'k_labels': k_labels,
-        'zero': zero_index
+        'mesh': fmesh.mesh, 'volumes': vol_dict, 'masses': mass_dict, 
+        'approach': kwargs['approach'], 'zero': zero_index
     }
 
     # Create input files
@@ -75,22 +62,13 @@ def create_tasks(path, **kwargs):
             path, fmesh, mass_dict, mat_dict, den_dict
         )
     elif kwargs['approach'] == 'simple':
-        config['material'] = cm_matrix(cell_labels, mat_labels, mat_dict)
-
         F0 = np.max(fmesh._data)
         M0 = max(mass_dict.values())
         ebins = fmesh._ebins
 
-        config['alpha'] = data.SparseData(
-            ('n_erg', 'i', 'j', 'k'), 
-            (n_labels, i_labels, j_labels, k_labels),
-            data.sparse.COO.from_numpy(fmesh._data / F0)
-        )
-        config['beta'] = data.SparseData(
-            ('cell', 'i', 'j', 'k'), 
-            (cell_labels, i_labels, j_labels, k_labels), 
-            {k: v / M0 for k, v in mass_dict.items()}
-        )
+        config['alpha'] = fmesh._data / F0
+        config['beta'] = {k: v / M0 for k, v in mass_dict.items()}
+        config['c2m'] = {c: m.name() for c, m in mat_dict.items()}
 
         mats = {m.name(): m for m in mat_dict.values()}
         task_list, index_output = create_simple_tasks(
@@ -100,14 +78,6 @@ def create_tasks(path, **kwargs):
     config['task_list'] = task_list
     config['index_output'] = index_output
     return config
-
-
-def cm_matrix(cell_labels, mat_labels, mat_dict):
-    cell_to_mat_dict = {(c, m.name()): 1 for c, m in mat_dict.items()}
-    result = data.SparseData(
-        ('cell', 'material'), (cell_labels, mat_labels), cell_to_mat_dict
-    )
-    return result
 
 
 def read_mcnp_input(inp_filename):

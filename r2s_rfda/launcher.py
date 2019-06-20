@@ -95,11 +95,7 @@ def arg_parser():
     )
 
     # fetch arguments
-    parser_fetch.add_argument(
-        '-z', '--zero', action='store_true', 
-        help='fetchs data only for cooling phase'
-    )
-
+    
     # source arguments
     parser_source.add_argument(
         'source', type=str, help='file for generated SDEF'
@@ -131,19 +127,12 @@ def main():
     elif command['action'] == 'fetch':
         fetch_task(path, command['zero'])
     elif command['action'] == 'source':
-        create_source(
-            path, command['time'], command['source'], 
-            command['distribution'], command['zero']
-        )
+        create_source(path, command['time'], command['source'], command['distribution'])
 
 
 def fetch_task(path, zero):
     config = load_config(path)
-    if zero and (config['zero'] is not None):
-        index = config['zero'] + 1
-    else: 
-        index = 0
-    fetch.collect(path, config, index)
+    fetch.collect(path, config)
 
 
 def run_task(path, threads):
@@ -152,14 +141,14 @@ def run_task(path, threads):
     run.run_tasks(task_list, threads=threads)
 
 
-def create_source(path, time, sdefname, sd, zero):
-    config = load_config(path)
-    gamma_data = fetch.load_data(path, 'gamma')
-    if zero:
-        zindex = config['zero']
-    else:
-        zindex = None
-    sdef = source.create_source(gamma_data, time, start_distr=sd, offset=zindex)
+def create_source(path, time, sdefname, sd):
+    result_conf = fetch.load_result_config(path)
+    time_labels = list(sorted(result_conf['gamma'].keys()))
+    closest_lab = utils.find_closest(time, time_labels)
+    if closest_lab != time:
+        print('Choosing the closest time label available: {0}'.format(closest_lab))
+    gamma_data = fetch.load_data(result_conf[closest_lab])
+    sdef = source.create_source(gamma_data, start_distr=sd)
     with open(path / sdefname, 'w') as f:
         f.write(sdef)
 
