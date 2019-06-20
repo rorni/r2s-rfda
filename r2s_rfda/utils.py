@@ -2,6 +2,7 @@
 
 import re
 from collections import deque
+import numpy as np
 
 
 _TIME_UNITS = {'s': 1, 'm': 60, 'h': 3600, 'd': 24 * 3600, 'y': 24 * 3600 * 365.25}
@@ -71,3 +72,32 @@ def count_group(groups):
             count_a = group.count('ATOMS')
             count += count_s + count_a
     return count
+
+
+def find_closest(t, time_labels):
+    """Finds the closest of time_labels to t.
+
+    Parameters
+    ----------
+    t : int
+        Time label.
+    time_labels : list
+        Time labels to search among which.
+
+    Returns
+    -------
+    cl : int
+        Closest time label.
+    """
+    i = np.searchsorted(time_labels, t)
+    if i == 0:
+        return time_labels[0]
+    elif i == len(time_labels):
+        return time_labels[-1]
+    else:
+        min_el = time_labels[i-1]
+        max_el = time_labels[i]
+        if t - min_el < max_el - t:
+            return min_el
+        else:
+            return max_el
