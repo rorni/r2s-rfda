@@ -6,7 +6,7 @@ import mckit.source as mcs
 from . import data
 
 
-def create_source(gamma_data, start_distr=1):
+def create_source(gamma_data, start_distr=1, threshold=1.e-9):
     """Creates MCNP SDEF for gamma source.
 
     Parameters
@@ -21,12 +21,12 @@ def create_source(gamma_data, start_distr=1):
     sdef : str
         MCNP SDEF description.
     """
-    source, intensity = activation_gamma_source(gamma_data, start_distr)
+    source, intensity = activation_gamma_source(gamma_data, start_distr, threshold=threshold)
     sdef = 'C total gamma intensity = {0:.5e}\n{1}'.format(intensity, source.mcnp_repr())
     return sdef
 
 
-def activation_gamma_source(gamma_data, start_name=1):
+def activation_gamma_source(gamma_data, start_name=1, threshold=1.e-9):
     """Creates activation gamma source.
 
     Parameters
@@ -59,14 +59,23 @@ def activation_gamma_source(gamma_data, start_name=1):
     y_indices = []
     z_indices = []
     c_values = []
-    for (g, c, i, j, k), intensity in gamma_data.iter_nonzero():
+    
+    indices = []
+    intensities = []
+    for index, intensity in gamma_data.iter_nonzero():
+        indices.append(index)
+        intensities.append(intensity)
+    total_intensity = sum(intensities)
+    
+    for (g, c, i, j, k), intensity in zip(indices, intensities):
+        if intensity / total_intensity < threshold:
+            continue
         probs.append(intensity)
         e_indices.append(e_distr[g])
         c_values.append(c)
         x_indices.append(x_distr[i])
         y_indices.append(y_distr[j])
-        z_indices.append(z_distr[k])
-    total_intensity = sum(probs)
+        z_indices.append(z_distr[k])    
 
     cell_dist = mcs.Distribution(start_name, c_values, probs, 'CEL')
     e_dist = mcs.Distribution(start_name + 1, e_indices, cell_dist, 'ERG')
@@ -75,7 +84,7 @@ def activation_gamma_source(gamma_data, start_name=1):
     z_dist = mcs.Distribution(start_name + 4, z_indices, cell_dist, 'Z')
 
     src_params = {
-        'PAR': 2, 'EFF': 1.e-2, 'CEL': cell_dist, 'ERG': e_dist, 
+        'PAR': 2, 'EFF': 1.e-3, 'CEL': cell_dist, 'ERG': e_dist, 
         'X': x_dist, 'Y': y_dist, 'Z': z_dist
     }
     return mcs.Source(**src_params), total_intensity
