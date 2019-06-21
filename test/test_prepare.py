@@ -89,6 +89,7 @@ def test_get_masses(vol_dict, den_dict, answer):
     assert answer == pytest.approx(masses, 1.e-3)
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize('clabs, mlabs, matdict, answer', [
     (
         (1, 3, 4, 5), (101, 102), {

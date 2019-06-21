@@ -77,19 +77,21 @@ def collect(path, config):
     with progressbar(N_dict.items()) as bar:
         for t, frame_dict in bar:
             if config['approach'] == 'full':
-                frame = get_full_frame(frame_dict, sp_index, g_labels)
+                frame = get_full_frame(frame_dict, sp_index, nuclides)
             else:
                 frame = get_simple_frame(frame_dict, flux_coeffs, mass_coeffs, mat_labels, nuclides)
             frame_obj = data.GammaFrame(frame, sp_index, t, nuclides, config['mesh'])
             save_data(result_conf['atoms'][t], frame_obj)
 
 
-def get_full_frame(frame_dict, s_index, g_labels):
-    frame = np.zeros((len(g_labels), len(s_index)))
+def get_full_frame(frame_dict, s_index, var_labels):
+    var_index = {v: i for i, v in enumerate(var_labels)}
+    frame = np.zeros((len(var_labels), len(s_index)))
     for g, data_dict in frame_dict.items():
+        g_i = var_index[g]
         for (c, i, j, k), value in data_dict.items():
             q = s_index.indices(c=c, i=i, j=j, k=k)[0]
-            frame[g, q] = value
+            frame[g_i, q] = value
     return frame
 
 

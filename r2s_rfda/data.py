@@ -72,7 +72,7 @@ class GammaFrame:
             Value.
         """
         g, c, i, j, k = index
-        q = self._sindex.indices(c=c, i=i, j=j, k=k)
+        q = self._sindex.indices(c=c, i=i, j=j, k=k)[0]
         return self._data[g, q]  
 
     def iter_nonzero(self):

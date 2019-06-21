@@ -23,12 +23,19 @@ def simple_calculations():
         launcher.prepare_task(path, 'config.ini')
         launcher.run_task(path, 6)
     return path
+
+
+@pytest.fixture(scope='module')
+def full_check():
+    path = Path('test/full1')
+    if not (path / 'settings.cfg').exists():
+        launcher.prepare_task(path, 'config.ini')
+        launcher.run_task(path, 6)
+    return path
        
 
-@pytest.mark.parametrize('axes, labels, outdata', [
-   (('time', 'g_erg', 'cell', 'xbins', 'ybins', 'zbins'),
-    (
-        (31558000, 31558600, 31562200, 31645000, 32422600, 63094600),
+@pytest.mark.parametrize('times, gergs, cells, xbins, ybins, zbins, outdata', [
+   (    (31558000, 31558600, 31562200, 31645000, 32422600, 63094600),
         (0, 0.01, 0.02, 0.05, 0.10, 0.20, 0.30, 0.40, 0.60, 0.80, 1.00, 1.22,
           1.44, 1.66, 2.00, 2.50, 3.00, 4.00, 5.00, 6.50, 8.00, 10.00, 12.00,
           14.00, 20.00
@@ -38,8 +45,7 @@ def simple_calculations():
          28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
          46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
          64, 65, 66, 67, 68, 69, 70),
-        (-10, 10), (-10, 10)
-    ),
+        (-10, 10), (-10, 10),
     np.array([
         [4.9092e+09, 2.5711e+09, 2.2591e+09, 7.0520e+08],
         [2.7429e+09, 1.4365e+09, 1.2622e+09, 3.9401e+08],
@@ -104,30 +110,46 @@ def simple_calculations():
     ])
    )
 ])
-def test_full_fetch(full_calculations, axes, labels, outdata):
-    launcher.fetch_task(full_calculations)
+def test_full_fetch(full_check, times, gergs, cells, xbins, ybins, zbins, outdata):
+    if not (full_check / 'result.cfg').exists():
+        launcher.fetch_task(full_check)
     
-    f_conf = fetch.load_result_config(full_calculations)
+    f_conf = fetch.load_result_config(full_check)
     full = {}
     for t, path in f_conf['gamma'].items():
         full[t] = fetch.load_data(path)
-    times = list(sorted(full.keys()))
-    assert times == labels[0]
+    ftimes = tuple(sorted(full.keys()))
+    assert ftimes == times
+    for i, t in enumerate(ftimes[2:]):
+        print('----------------')
+        frame = full[t]
+        np.testing.assert_array_equal(frame.gbins, gergs)
+        np.testing.assert_array_equal(frame.spatial_index.cells(), cells)
+        np.testing.assert_array_equal(frame.xbins, xbins)
+        np.testing.assert_array_equal(frame.ybins, ybins)
+        np.testing.assert_array_equal(frame.zbins, zbins)
+        si = frame.spatial_index
+        data = frame._data.toarray().sum(axis=0)
+        for ind, d in zip(si, data):
+            j = ind[1]
+            print(ind, "{0:.4e} {1:.4e}".format(d / 400, outdata[j, i]))
+        #for j in range(outdata.shape[0]):
+        #    indices = si.indices(i=j, j=0, k=0)
+        #    print(indices)
+        #    for ind in indices:
+        #        value = frame._data[:, ind].sum()
+        #        print(i, j, '{0:.4e} {1:.4e}'.format(value / 400, outdata[j, i]))
+        
     
-    for j in range(outdata.shape[1]):
-        data = full[times[j]]
-        for i in range(outdata.shape[0]):
-            arr = data[:, 0, 0, 0, i]
-            val = arr.sum()
-            if not (val / 400 == pytest.approx(outdata[i, j], 0.1)):
-                print(i, j, val/400, outdata[i, j])
-
+   
     assert False
             
 
 def test_simple_fetch(full_calculations, simple_calculations):
-    launcher.fetch_task(simple_calculations)
-    launcher.fetch_task(full_calculations)
+    if not (full_calculations / 'result.cfg').exists():
+        launcher.fetch_task(full_calculations)
+    if not (simple_calculations / 'result.cfg').exists():
+        launcher.fetch_task(simple_calculations)
 
     s_conf = fetch.load_result_config(simple_calculations)
     f_conf = fetch.load_result_config(full_calculations)
@@ -137,7 +159,20 @@ def test_simple_fetch(full_calculations, simple_calculations):
         simple[t] = fetch.load_data(path)
     for t, path in f_conf['gamma'].items():
         full[t] = fetch.load_data(path)
-    
+
+    time_f = list(sorted(simple.keys()))
+    time_s = list(sorted(full.keys()))
+    assert time_f == time_s
+
+    for t in time_s:
+        print('-----------------------')
+        s_frame = simple[t]
+        f_frame = full[t]
+        for index, sv in s_frame.iter_nonzero():
+            fv = f_frame[index]
+            if sv > 10 or fv > 10:
+                flag = ' + ' if abs(sv-fv) / min(sv, fv) > 0.001 else ''
+                print(index, '{0:.4e}  {1:.4e}'.format(sv, fv), flag)
     #print(' '.join(simple.labels[1]))
     #print(' ---------------------- ')
     #print(' '.join(full.labels[1]))
@@ -158,7 +193,8 @@ def test_simple_fetch(full_calculations, simple_calculations):
     # assert simple.data.nnz == full.data.nnz
     cnt = 0
     cnt_c = 0
-    print(full.labels)
+
+    #print(full.labels)
     for index in zip(*simple.data.nonzero()):
         tot_s = simple.data[index[0], :, index[2], index[3], index[4], index[5]].sum()
         tot_f = simple.data[index[0], :, index[2], index[3], index[4], index[5]].sum()
@@ -170,6 +206,7 @@ def test_simple_fetch(full_calculations, simple_calculations):
             assert simple.data[index] == pytest.approx(full.data[index], 1.e-1)
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize('results', [
     {
         2: (1.0000, range(0, 10)),
