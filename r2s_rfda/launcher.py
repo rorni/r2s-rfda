@@ -112,10 +112,13 @@ def arg_parser():
         '-z', '--zero', action='store_true', 
         help='set end of irradiation as time zero.'
     )
-    
     parser_source.add_argument(
-        '-t', '--threshold', type=float, nargs='?', default=1.e-9, 
+        '-i', '--intensity-filter', type=float, nargs='?', default=1.e-9, 
         help='threshold to discriminate small probabilities in source'
+    )
+    parser_source.add_argument(
+        '-v', '--volume-filter', type=float, nargs='?', default=1.e-3,
+        help='threshold to discirminate small cells.'
     )
 
     args = parser.parse_args()
@@ -134,7 +137,7 @@ def main():
     elif command['action'] == 'source':
         create_source(
             path, command['time'], command['source'], command['distribution'], 
-            command['zero'], command['threshold']
+            command['zero'], command['intensity-filter'], command['volume-filter']
         )
 
 
@@ -149,7 +152,7 @@ def run_task(path, threads):
     run.run_tasks(task_list, threads=threads)
 
 
-def create_source(path, time, sdefname, sd, zero, threshold):
+def create_source(path, time, sdefname, sd, zero, int_filter, vol_filter):
     config = load_config(path)
     result_conf = fetch.load_result_config(path)
     time_labels = list(sorted(result_conf['gamma'].keys()))
@@ -159,7 +162,10 @@ def create_source(path, time, sdefname, sd, zero, threshold):
     if closest_lab != time:
         print('Choosing the closest time label available: {0}'.format(closest_lab))
     gamma_data = fetch.load_data(result_conf['gamma'][closest_lab])
-    sdef = source.create_source(gamma_data, start_distr=sd, threshold=threshold)
+    sdef = source.create_source(
+        gamma_data, config['vol_dict'], start_distr=sd, int_filter=int_filter, 
+        vol_filter=vol_filter
+    )
     with open(path / sdefname, 'w') as f:
         f.write(sdef)
 

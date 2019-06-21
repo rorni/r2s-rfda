@@ -6,7 +6,7 @@ import mckit.source as mcs
 from . import data
 
 
-def create_source(gamma_data, start_distr=1, threshold=1.e-9):
+def create_source(gamma_data, vol_dict, start_distr=1, int_filter=1.e-9, vol_filter=1.e-3):
     """Creates MCNP SDEF for gamma source.
 
     Parameters
@@ -21,12 +21,14 @@ def create_source(gamma_data, start_distr=1, threshold=1.e-9):
     sdef : str
         MCNP SDEF description.
     """
-    source, intensity = activation_gamma_source(gamma_data, start_distr, threshold=threshold)
+    source, intensity = activation_gamma_source(
+        gamma_data, vol_dict, start_distr, int_filter=int_filter, vol_filter=vol_filter
+    )
     sdef = 'C total gamma intensity = {0:.5e}\n{1}'.format(intensity, source.mcnp_repr())
     return sdef
 
 
-def activation_gamma_source(gamma_data, start_name=1, threshold=1.e-9):
+def activation_gamma_source(gamma_data, vol_dict, start_name=1, int_filter=1.e-9, vol_filter=1.e-3):
     """Creates activation gamma source.
 
     Parameters
@@ -44,14 +46,17 @@ def activation_gamma_source(gamma_data, start_name=1, threshold=1.e-9):
         Total gamma source intensity.
     """
     aux_name = start_name + 5
+    xbins = gamma_data.xbins
+    ybins = gamma_data.ybins
+    zbins = gamma_data.zbins
     # energy
     aux_name, e_distr = create_bin_distributions(gamma_data.gbins, aux_name)
     # xbins
-    aux_name, x_distr = create_bin_distributions(gamma_data.xbins, aux_name)
+    aux_name, x_distr = create_bin_distributions(xbins, aux_name)
     # ybins
-    aux_name, y_distr = create_bin_distributions(gamma_data.ybins, aux_name)
+    aux_name, y_distr = create_bin_distributions(ybins, aux_name)
     # zbins
-    aux_name, z_distr = create_bin_distributions(gamma_data.zbins, aux_name)
+    aux_name, z_distr = create_bin_distributions(zbins, aux_name)
     
     probs = []
     e_indices = []
@@ -68,7 +73,10 @@ def activation_gamma_source(gamma_data, start_name=1, threshold=1.e-9):
     total_intensity = sum(intensities)
     
     for (g, c, i, j, k), intensity in zip(indices, intensities):
-        if intensity / total_intensity < threshold:
+        if intensity / total_intensity < int_filter:
+            continue
+        voxel_vol = (xbins[i+1] - xbins[i]) * (ybins[j+1] - ybins[j]) * (zbins[k+1] - zbins[k])
+        if vol_dict[c, i, j, k] / voxel_vol < vol_filter:
             continue
         probs.append(intensity)
         e_indices.append(e_distr[g])
