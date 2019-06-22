@@ -137,7 +137,7 @@ def main():
     elif command['action'] == 'source':
         create_source(
             path, command['time'], command['source'], command['distribution'], 
-            command['zero'], command['intensity-filter'], command['volume-filter']
+            command['zero'], command['intensity_filter'], command['volume_filter']
         )
 
 
@@ -163,7 +163,7 @@ def create_source(path, time, sdefname, sd, zero, int_filter, vol_filter):
         print('Choosing the closest time label available: {0}'.format(closest_lab))
     gamma_data = fetch.load_data(result_conf['gamma'][closest_lab])
     sdef = source.create_source(
-        gamma_data, config['vol_dict'], start_distr=sd, int_filter=int_filter, 
+        gamma_data, config['volumes'], start_distr=sd, int_filter=int_filter, 
         vol_filter=vol_filter
     )
     with open(path / sdefname, 'w') as f:
