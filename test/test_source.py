@@ -92,7 +92,7 @@ SI12 H 2 5
 SP12 D 0 1"""
 ]
 
-@pytest.mark.parametrize('gamma_data, start_distr, src_index', [
+@pytest.mark.parametrize('gamma_data, vols, start_distr, ifil, vfil, src_index', [
     (data.GammaFrame(
         np.array([[0, 0, 0, 10, 15], [10, 20, 15, 15, 20]]), 
         data.SpatialIndex([
@@ -118,9 +118,24 @@ SP12 D 0 1"""
      ), 1, 2
     )   
 ])
-def test_create_source(gamma_data, start_distr, src_index):
+def test_create_source(gamma_data, vols, start_distr, ifil, vfil, src_index):
     answer = sources[src_index]
-    sdef = source.create_source(gamma_data, start_distr=start_distr)
+    sdef = source.create_source(gamma_data, vols, start_distr=start_distr, int_filter=ifil, vol_filter=vfil)
     print(sdef)
     assert sdef == answer
 
+
+@pytest.mark.parametrize('xbins, ybins, zbins', [
+    ([1, 2, 4, 8, 23], [-90, -80, -42, 13], [0, 550, 600, 3048]),
+    ([-1, 500, 703], [-2, 4], [4, 8, 19, 36])
+])
+def test_mesh_volumes(xbins, ybins, zbins):
+    volumes = source.get_mesh_volumes(xbins, ybins, zbins)
+    assert volumes.shape == (len(xbins)-1, len(ybins)-1, len(zbins)-1)
+    for i in range(len(xbins) - 1):
+        x = xbins[i+1] - xbins[i]
+        for j in range(len(ybins) - 1):
+            y = ybins[j+1] - ybins[j]
+            for k in range(len(zbins) - 1):
+                z = zbins[k+1] - zbins[k]
+                assert volumes[i, j, k] == x * y * z
