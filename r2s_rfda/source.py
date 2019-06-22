@@ -35,8 +35,16 @@ def activation_gamma_source(gamma_data, vol_dict, start_name=1, int_filter=1.e-9
     ----------
     gamma_data : SparseData
         Gamma source intensity data.
+    vol_dict : dict
+        A dictionary of cell volumes.
     start_name : int
         Starting name for distributions. Default: 1.
+    int_filter : float
+        Intensity filter. Relative treshold, below which source bins will be
+        rejected. Default: 1.e-9
+    vol_filter : float
+        Volume filter. Cell parts with volume less than this fraction of voxel
+        volume will be removed from source distribution.    
 
     Returns
     -------
@@ -57,6 +65,8 @@ def activation_gamma_source(gamma_data, vol_dict, start_name=1, int_filter=1.e-9
     aux_name, y_distr = create_bin_distributions(ybins, aux_name)
     # zbins
     aux_name, z_distr = create_bin_distributions(zbins, aux_name)
+
+    voxel_vols = get_mesh_volumes(xbins, ybins, zbins)    
     
     probs = []
     e_indices = []
@@ -71,12 +81,17 @@ def activation_gamma_source(gamma_data, vol_dict, start_name=1, int_filter=1.e-9
         indices.append(index)
         intensities.append(intensity)
     total_intensity = sum(intensities)
-    
+    print('Total gamma intensity: {0:.4e} g/sec'.format(total_intensity))
+
+    int_rejected = 0
+    vol_rejected = 0
+
     for (g, c, i, j, k), intensity in zip(indices, intensities):
         if intensity / total_intensity < int_filter:
+            int_rejected += intensity
             continue
-        voxel_vol = (xbins[i+1] - xbins[i]) * (ybins[j+1] - ybins[j]) * (zbins[k+1] - zbins[k])
-        if vol_dict[c, i, j, k] / voxel_vol < vol_filter:
+        if vol_dict[c, i, j, k] / voxel_vols[i, j, k] < vol_filter:
+            vol_rejected += intensity
             continue
         probs.append(intensity)
         e_indices.append(e_distr[g])
@@ -84,6 +99,17 @@ def activation_gamma_source(gamma_data, vol_dict, start_name=1, int_filter=1.e-9
         x_indices.append(x_distr[i])
         y_indices.append(y_distr[j])
         z_indices.append(z_distr[k])    
+
+    print('Rejection due to intensity filter: {0:.3e} g/sec ({1:.3e} %)'.format(
+        int_rejected, int_rejected / total_intensity * 100)
+    )
+    print('Rejection due to volume filter:    {0:.3e} g/sec ({1:.3e} %)'.format(
+        vol_rejected, vol_rejected / total_intensity * 100)
+        )
+    tot_rejected = vol_rejected + int_rejected
+    print('Total rejection:                   {0:.3e} g/sec ({1:.3e} %)'.format(
+        tot_rejected, tot_rejected / total_intensity * 100
+    ))
 
     cell_dist = mcs.Distribution(start_name, c_values, probs, 'CEL')
     e_dist = mcs.Distribution(start_name + 1, e_indices, cell_dist, 'ERG')
@@ -123,3 +149,12 @@ def create_bin_distributions(bins, start_name):
         start_name += 1
     return start_name, distributions
 
+
+def get_mesh_volumes(xbins, ybins, zbins):
+    xbins = np.array(xbins)
+    ybins = np.array(ybins)
+    zbins = np.array(zbins)
+    x_len = np.expand_dims(xbins[1:] - xbins[:-1], 1)
+    y_len = np.expand_dims(ybins[1:] - ybins[:-1], 0)
+    z_len = np.expand_dims(zbins[1:] - zbins[:-1], 0)
+    return np.dot(np.expand_dims(np.dot(x_len, y_len), 2), z_len)
