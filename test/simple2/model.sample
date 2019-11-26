@@ -1,0 +1,12 @@
+[MODEL]
+# MCNP input model
+mcnp     = model.i
+# File with neutron mesh tallies
+fmesh    = meshtal
+# The number of mesh tally under consideration.
+tally    = 4
+# Calculation approach. [simple | full]
+approach = simple
+# Tolerance for volume calculation
+minvol = 0.0001
+# ------------------------------------------------------

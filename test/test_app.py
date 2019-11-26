@@ -1,16 +1,32 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+import os
 from pathlib import Path
 import numpy as np
 
 from r2s_rfda import launcher, fetch
 
 
+def create_config(path):
+    pathlib = os.environ.get('FISPACT_DATA', "")
+    print('****: ', pathlib)
+    with open(path / 'model.sample') as f:
+        model = f.read()
+    with open(path / 'fispact.sample') as f:
+        fispact = f.read()
+    with open(path / '../datalib.sample') as f:
+        datalib = f.read().format(pathlib)
+
+    with open(path / 'config.ini', 'w') as f:
+        f.write('\n'.join([model, datalib, fispact]))
+
+
 @pytest.fixture(scope='module')
 def full_calculations():
     path = Path('test/full2')
     if not (path / 'settings.cfg').exists():
+        create_config(path)
         launcher.prepare_task(path, 'config.ini')
         launcher.run_task(path, 6)
     return path
@@ -20,6 +36,17 @@ def full_calculations():
 def simple_calculations():
     path = Path('test/simple2')
     if not (path / 'settings.cfg').exists():
+        create_config(path)
+        launcher.prepare_task(path, 'config.ini')
+        launcher.run_task(path, 6)
+    return path
+
+
+@pytest.fixture(scope='module')
+def simple_calculations1():
+    path = Path('test/simple1')
+    if not (path / 'settings.cfg').exists():
+        create_config(path)
         launcher.prepare_task(path, 'config.ini')
         launcher.run_task(path, 6)
     return path
@@ -29,6 +56,7 @@ def simple_calculations():
 def full_check():
     path = Path('test/full1')
     if not (path / 'settings.cfg').exists():
+        create_config(path)
         launcher.prepare_task(path, 'config.ini')
         launcher.run_task(path, 6)
     return path
@@ -139,12 +167,9 @@ def test_full_fetch(full_check, times, gergs, cells, xbins, ybins, zbins, outdat
         #    for ind in indices:
         #        value = frame._data[:, ind].sum()
         #        print(i, j, '{0:.4e} {1:.4e}'.format(value / 400, outdata[j, i]))
-        
-    
-   
-    assert False
             
 
+@pytest.mark.skip
 def test_simple_fetch(full_calculations, simple_calculations):
     if not (full_calculations / 'result.cfg').exists():
         launcher.fetch_task(full_calculations)
@@ -206,7 +231,7 @@ def test_simple_fetch(full_calculations, simple_calculations):
             assert simple.data[index] == pytest.approx(full.data[index], 1.e-1)
 
 
-@pytest.mark.skip
+#@pytest.mark.skip
 @pytest.mark.parametrize('results', [
     {
         2: (1.0000, range(0, 10)),
@@ -217,14 +242,15 @@ def test_simple_fetch(full_calculations, simple_calculations):
         7: (0.1282, range(50, 60))
     }
 ])
-def test_beta(simple_calculations, results):
-    beta = launcher.load_config(simple_calculations)['beta']
+def test_beta(simple_calculations1, results):
+    beta = launcher.load_config(simple_calculations1)['beta']
+    print(beta)
     # assert beta.data.nnz == 60
-    for c, i, j, k in zip(*beta.data.nonzero()):
-        cn = beta.labels[0][c]
-        print(cn, i, j, k, beta.data[c, i, j, k])
+    for (c, i, j, k), b in beta.items():
+        cn = c
+        print(cn, i, j, k, b)
         if i in results[cn][1]:
-            assert beta.data[c, i, j, k] == pytest.approx(results[cn][0], 0.1)
+            print(results[cn][1])
+            assert b == pytest.approx(results[cn][0], 0.1)
         else:
-            assert beta.data[c, i, j, k] < results[cn][0] * 1.e-1
-
+            assert b < results[cn][0] * 1.e-1

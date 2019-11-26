@@ -89,25 +89,25 @@ def test_get_masses(vol_dict, den_dict, answer):
     assert answer == pytest.approx(masses, 1.e-3)
 
 
-@pytest.mark.skip
-@pytest.mark.parametrize('clabs, mlabs, matdict, answer', [
-    (
-        (1, 3, 4, 5), (101, 102), {
-            1: Composition(atomic=[('Al', 1)], name=101), 
-            3: Composition(atomic=[('Fe', 1)], name=102), 
-            4: Composition(atomic=[('Al', 1)], name=101), 
-            5: Composition(atomic=[('Fe', 1)], name=102)
-        },
-        (
-            ('cell', 'material'), ((1, 3, 4, 5), (101, 102)), 
-            {(0, 0): 1, (1, 1): 1, (2, 0): 1, (3, 1): 1}
-        )
-    )
-])
-def test_cm_matrix(clabs, mlabs, matdict, answer):
-    result = prepare.cm_matrix(clabs, mlabs, matdict)
-    assert result.axes == answer[0]
-    assert result.labels == answer[1]
-    assert result.data.nnz == len(answer[2])
-    for index, value in answer[2].items():
-        assert value == result.data[index]
+# @pytest.mark.skip
+# @pytest.mark.parametrize('clabs, mlabs, matdict, answer', [
+#     (
+#         (1, 3, 4, 5), (101, 102), {
+#             1: Composition(atomic=[('Al', 1)], name=101),
+#             3: Composition(atomic=[('Fe', 1)], name=102),
+#             4: Composition(atomic=[('Al', 1)], name=101),
+#             5: Composition(atomic=[('Fe', 1)], name=102)
+#         },
+#         (
+#             ('cell', 'material'), ((1, 3, 4, 5), (101, 102)),
+#             {(0, 0): 1, (1, 1): 1, (2, 0): 1, (3, 1): 1}
+#         )
+#     )
+# ])
+# def test_cm_matrix(clabs, mlabs, matdict, answer):
+#     result = prepare.cm_matrix(clabs, mlabs, matdict)
+#     assert result.axes == answer[0]
+#     assert result.labels == answer[1]
+#     assert result.data.nnz == len(answer[2])
+#     for index, value in answer[2].items():
+#         assert value == result.data[index]

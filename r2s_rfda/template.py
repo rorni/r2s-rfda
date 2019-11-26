@@ -11,9 +11,9 @@ def read_template(temp_name):
     return template
 
 
-files_temp = None # read_template('files.temp')
-collapse_temp = None # read_template('collapse.temp')
-condense_temp = None # read_template('condense.temp')
+files_temp = None     # read_template('files.temp')
+collapse_temp = None  # read_template('collapse.temp')
+condense_temp = None  # read_template('condense.temp')
 inventory_temp = None
 flux_coeffs = None
 

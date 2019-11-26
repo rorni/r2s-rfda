@@ -171,9 +171,10 @@ def create_source(path, time, sdefname, sd, zero, int_filter, vol_filter):
 
 
 def prepare_task(path, config_name):
+    print('path: ', path)
     casepath = Path(path / 'cases')
+    print('casepath: ', casepath)
     casepath.mkdir()
-    
     model, datalib, fispact = load_task(path / config_name)
     # try:
     config = prepare.create_tasks(

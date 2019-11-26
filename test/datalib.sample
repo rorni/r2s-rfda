@@ -1,0 +1,13 @@
+[DATALIB]
+# FISPACT data libraries
+ind_nuc  = {0}TENDL2014data\tendl14_decay12_index
+xs_endf  = {0}TENDL2014data\tal2014-n\gxs-709
+xs_endfb = {0}TENDL2014data\tal2014-n\tal2014-n.bin
+prob_tab = {0}TENDL2014data\tal2014-n\tp-709-294
+fy_endf  = {0}TENDL2014data\tal2014-n\gef42_nfy
+sf_endf  = {0}TENDL2014data\tal2014-n\gef42_sfy
+dk_endf  = {0}decay\decay_2012
+hazards  = {0}decay\hazards_2012
+clear    = {0}decay\clear_2012
+a2data   = {0}decay\a2_2012
+absorp   = {0}decay\abs_2012

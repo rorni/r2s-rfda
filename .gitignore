@@ -3,8 +3,15 @@ __pycache__
 .vscode/*
 .pytest_cache/*
 build/*
+
 /test/*/cases/*
-/test/*/*.dat
+/test/**/results/
+/test/**/*.dat
+/test/*/*.cfg
+/test/**/*.ini
+
 *.egg-info
 *.whl
-/test/*/*.cfg
+.cache/
+.idea/
+dist/

@@ -1,0 +1,8 @@
+[FISPACT]
+# FISPACT template files
+# inventory template
+inventory = temp.i
+# If -1, then use binary library, 1 - to use text libraries.
+libxs     = -1
+# Flux for scenario normalization
+norm_flux = 1

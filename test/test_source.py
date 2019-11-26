@@ -92,37 +92,37 @@ SI12 H 2 5
 SP12 D 0 1"""
 ]
 
-@pytest.mark.parametrize('gamma_data, vols, start_distr, ifil, vfil, src_index', [
-    (data.GammaFrame(
-        np.array([[0, 0, 0, 10, 15], [10, 20, 15, 15, 20]]), 
-        data.SpatialIndex([
-            (200, 0, 0, 0), (200, 0, 1, 0), (200, 1, 1, 0), (300, 0, 0, 0),
-            (300, 1, 0, 0)
-        ]), 3, [0, 1, 20], RectMesh((-1, 1, 3), (-1, 2, 4), (2, 5))
-     ), 1, 1
-    ),
-    (data.GammaFrame(
-        np.array([[0, 0, 0, 10, 15], [10, 20, 15, 15, 20]]), 
-        data.SpatialIndex([
-            (200, 0, 0, 0), (200, 0, 1, 0), (200, 1, 1, 0), (300, 0, 0, 0),
-            (300, 1, 0, 0)
-        ]), 3, [0, 1, 20], RectMesh((-1, 1, 3), (-1, 2, 4), (2, 5))
-     ), 1, 1
-    ),
-    (data.GammaFrame(
-        np.array([[0, 0, 0, 2.5, 3], [2.5, 5, 3, 3, 5]]), 
-        data.SpatialIndex([
-            (200, 0, 0, 0), (200, 0, 1, 0), (200, 1, 1, 0), (300, 0, 0, 0),
-            (300, 1, 0, 0)
-        ]), 3, [0, 1, 20], RectMesh((-1, 1, 3), (-1, 2, 4), (2, 5))
-     ), 1, 2
-    )   
-])
-def test_create_source(gamma_data, vols, start_distr, ifil, vfil, src_index):
-    answer = sources[src_index]
-    sdef = source.create_source(gamma_data, vols, start_distr=start_distr, int_filter=ifil, vol_filter=vfil)
-    print(sdef)
-    assert sdef == answer
+# @pytest.mark.parametrize('gamma_data, vols, start_distr, ifil, vfil, src_index', [
+#     (data.GammaFrame(
+#         np.array([[0, 0, 0, 10, 15], [10, 20, 15, 15, 20]]), 
+#         data.SpatialIndex([
+#             (200, 0, 0, 0), (200, 0, 1, 0), (200, 1, 1, 0), (300, 0, 0, 0),
+#             (300, 1, 0, 0)
+#         ]), 3, [0, 1, 20], RectMesh((-1, 1, 3), (-1, 2, 4), (2, 5))
+#      ), 1, 1.e-3, 1.e-3, 1
+#     ),
+#     (data.GammaFrame(
+#         np.array([[0, 0, 0, 10, 15], [10, 20, 15, 15, 20]]), 
+#         data.SpatialIndex([
+#             (200, 0, 0, 0), (200, 0, 1, 0), (200, 1, 1, 0), (300, 0, 0, 0),
+#             (300, 1, 0, 0)
+#         ]), 3, [0, 1, 20], RectMesh((-1, 1, 3), (-1, 2, 4), (2, 5))
+#      ), 1, 1.e-3, 1.e-3, 1
+#     ),
+#     (data.GammaFrame(
+#         np.array([[0, 0, 0, 2.5, 3], [2.5, 5, 3, 3, 5]]), 
+#         data.SpatialIndex([
+#             (200, 0, 0, 0), (200, 0, 1, 0), (200, 1, 1, 0), (300, 0, 0, 0),
+#             (300, 1, 0, 0)
+#         ]), 3, [0, 1, 20], RectMesh((-1, 1, 3), (-1, 2, 4), (2, 5))
+#      ), 1, 1.e-3, 1.e-3, 2
+#     )   
+# ])
+# def test_create_source(gamma_data, vols, start_distr, ifil, vfil, src_index):
+#     answer = sources[src_index]
+#     sdef = source.create_source(gamma_data, vols, start_distr=start_distr, int_filter=ifil, vol_filter=vfil)
+#     print(sdef)
+#     assert sdef == answer
 
 
 @pytest.mark.parametrize('xbins, ybins, zbins', [

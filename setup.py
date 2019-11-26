@@ -6,7 +6,13 @@ setup(
     name='r2s_rfda',
     version='0.3',
     packages=find_packages(),
-    install_requires=['sparse', 'pypact', 'mckit==0.1.2'],
+    install_requires=[
+        'sparse',
+        'pypact',
+        'mckit==0.1.2',
+        'pytest',
+        'numpy'
+    ],
     dependency_links=['git+ssh://git@github.com/rorni/mckit.git#egg=mckit-0.1.2'],
     entry_points={'console_scripts': ['r2s-rfda = r2s_rfda.launcher:main']},
     author='Roman Rodionov',
