@@ -28,7 +28,7 @@ def create_source(gamma_data, vol_dict, start_distr=1, int_filter=1.e-9, vol_fil
     return sdef
 
 
-def activation_gamma_source(gamma_data, vol_dict, start_name=1, int_filter=1.e-9, vol_filter=1.e-3):
+def activation_gamma_source(gamma_data, vol_dict, start_name=1, int_filter=1.e-9, vol_filter=1.e-3, white_list=None):
     """Creates activation gamma source.
 
     Parameters
@@ -44,7 +44,9 @@ def activation_gamma_source(gamma_data, vol_dict, start_name=1, int_filter=1.e-9
         rejected. Default: 1.e-9
     vol_filter : float
         Volume filter. Cell parts with volume less than this fraction of voxel
-        volume will be removed from source distribution.    
+        volume will be removed from source distribution.
+    white_list : list
+        List of cells constituting the gamma source.
 
     Returns
     -------
@@ -77,9 +79,15 @@ def activation_gamma_source(gamma_data, vol_dict, start_name=1, int_filter=1.e-9
     
     indices = []
     intensities = []
-    for index, intensity in gamma_data.iter_nonzero():
-        indices.append(index)
-        intensities.append(intensity)
+    if white_list is None:
+        for index, intensity in gamma_data.iter_nonzero():
+            indices.append(index)
+            intensities.append(intensity)
+    else:
+        for index, intensity in gamma_data.iter_nonzero():
+            if index[1] in white_list:
+                indices.append(index)
+                intensities.append(intensity)
     total_intensity = sum(intensities)
     print('Total gamma intensity: {0:.4e} g/sec'.format(total_intensity))
 
