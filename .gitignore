@@ -1,7 +1,8 @@
 __pycache__
 *.pyc
 .vscode/*
-.pytest_cache/*
+.pytest_cache/
+.eggs/
 build/*
 
 /test/*/cases/*
