@@ -1,7 +1,10 @@
 __pycache__
 *.pyc
+.coverage
+htmlcov/
 .vscode/*
-.pytest_cache/*
+.pytest_cache/
+.eggs/
 build/*
 
 /test/*/cases/*
