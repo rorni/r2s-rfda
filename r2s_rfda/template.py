@@ -23,6 +23,16 @@ order = [
 ]
 
 
+FRACTION = r'\.'
+EXPONENT = r'([eE][-+]?\d+)'
+INT_NUMBER = r'(\d+)'
+FLT_NUMBER = r'(' + \
+             INT_NUMBER + r'|' +\
+             INT_NUMBER + r'?' + FRACTION + INT_NUMBER + EXPONENT + r'?|' +\
+             INT_NUMBER + FRACTION + r'?' + EXPONENT + r'|' + \
+             INT_NUMBER + FRACTION + r')(?=[ \n-+])'
+             
+
 def init_inventory_template(inptemp, norm_flux):
     """Initialize new template with replaced fluxes in irradiation scenario.
 
@@ -39,14 +49,36 @@ def init_inventory_template(inptemp, norm_flux):
     """
     global inventory_temp
     global flux_coeffs
-    pat = re.compile('FLUX +[0-9]+.[0-9]+E.[0-9]+')
-    res = pat.split(inptemp)
-    mats = pat.findall(inptemp)
+    flux_pattern = re.compile('(FLUX +)', flags=re.IGNORECASE)
+    zero_pattern = re.compile('0[ \n]')
+    float_pattern = re.compile(FLT_NUMBER, flags=re.IGNORECASE)
+
+    substrings = flux_pattern.split(inptemp)
     flux_coeffs = []
-    for i, mat in enumerate(mats):
-        res.insert(2*i+1, 'FLUX {{{0}}}'.format(i))
-        flux_coeffs.append(float(mat[4:]) / norm_flux)
-    inventory_temp = ''.join(res)
+    try_number = False
+    result = []
+    i = 0
+    for string in substrings:
+        if try_number:
+            print('"{0}"'.format(string))
+            if zero_pattern.match(string):
+                result.append(string)
+            else:
+                match = float_pattern.match(string)
+                print(match.group(0))
+                if not match:
+                    raise ValueError('Scenario template contains incorrect data')
+                flux_coeffs.append(float(match.group(0)) / norm_flux)
+                result.append('{{{0}}}'.format(i))
+                i += 1
+                result.append(string[match.end(0):])
+        else:
+            result.append(string)
+        if flux_pattern.fullmatch(string):
+            try_number = True
+        else:
+            try_number = False
+    inventory_temp = ''.join(result)
     flux_coeffs = np.array(flux_coeffs)
 
 

@@ -14,7 +14,8 @@ def load_file(filename):
 
 
 @pytest.mark.parametrize('input, norm_flux, templ, coeffs', [
-    ('input_1.i', 4.5643E+12, 'temp_1.i', [0.00535723, 0.04125058, 0.08303573, 1., 1.39999562])
+    ('input_1.i', 4.5643E+12, 'temp_1.i', [0.00535723, 0.04125058, 0.08303573, 1., 1.39999562]),
+    ('input_5.i', 1, 'temp_5.i', [2.4452, 1.0e+11, 0.79e-11, 4.0e+12, 6])
 ])
 def test_init_inventory_template(input, norm_flux, templ, coeffs):
     input = load_file(input)
