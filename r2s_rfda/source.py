@@ -24,8 +24,12 @@ def create_source(gamma_data, vol_dict, start_distr=1, int_filter=1.e-9, vol_fil
     source, intensity = activation_gamma_source(
         gamma_data, vol_dict, start_distr, int_filter=int_filter, vol_filter=vol_filter
     )
-    sdef = 'C total gamma intensity = {0:.5e}\n{1}'.format(intensity, source.mcnp_repr())
-    return sdef
+    sdef_lines = ['C total gamma intensity = {0:.5e}'.format(intensity)]
+    if gamma_data.mesh._tr is not None:
+        sdef_lines.append('C FMesh used for calculations has transformation:')
+        sdef_lines.append('C {0}'.format(gamma_data.mesh._tr.mcnp_repr()))
+    sdef_lines.append('{0}'.format(source.mcnp_repr()))
+    return '\n'.join(sdef_lines)
 
 
 def activation_gamma_source(gamma_data, vol_dict, start_name=1, int_filter=1.e-9, vol_filter=1.e-3, white_list=None):

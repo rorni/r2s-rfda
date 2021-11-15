@@ -7,10 +7,26 @@ from click import progressbar
 from mckit import read_mcnp
 from mckit.parser.meshtal_parser import read_meshtal
 from mckit.material import AVOGADRO
+from mckit.transformation import Transformation
 
 from . import template
 from . import data
 from . import utils
+
+
+def parse_transforamtion(input):
+    if input[0] == '*':
+        indegrees = True
+    else:
+        indegrees = False
+    input = input.strip('*() ')
+    entities = [float(x) for x in input.split()]
+    translation = entities[:3]
+    if len(entities) == 3:
+        rotation = None
+    else:
+        rotation = entities[3:]
+    return translation, rotation, indegrees    
 
 
 def create_tasks(path, **kwargs):
@@ -30,7 +46,7 @@ def create_tasks(path, **kwargs):
     """
     model = read_mcnp_input(kwargs['mcnp_name'])
     
-    fmesh = read_fmesh_tally(kwargs['fmesh_name'], kwargs['tally_name'])
+    fmesh = read_fmesh_tally(kwargs['fmesh_name'], kwargs['tally_name'], kwargs['transform'])
 
     # set templates
     zero_index = init_templates(
@@ -85,10 +101,15 @@ def read_mcnp_input(inp_filename):
     return read_mcnp(inp_filename)
 
 
-def read_fmesh_tally(fmesh_filename, tally_name):
+def read_fmesh_tally(fmesh_filename, tally_name, transform):
     print('Reading meshtal file ({0}) ...'.format(fmesh_filename))
     tallies = read_meshtal(fmesh_filename)
-    return tallies[tally_name]
+    tally = tallies[tally_name]
+    if transform is not None:
+        transl, rot, indegrees = parse_transforamtion(transform)
+        tr = Transformation(transl, rot, indegrees=indegrees, name=1)
+        tally.mesh.transform(tr)
+    return tally
 
 
 def init_templates(inv_filename, norm_flux, libs, libxs, nerg_groups):

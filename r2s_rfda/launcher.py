@@ -183,6 +183,7 @@ def prepare_task(path, config_name):
         fmesh_name=path / model['fmesh'],
         tally_name=int(model['tally']),
         min_volume=float(model['minvol']),
+        transform=model.get('transform', None),
         libs=datalib,
         libxs=fispact['libxs'],
         inventory=path / fispact['inventory'],
