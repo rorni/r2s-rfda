@@ -87,6 +87,10 @@ def arg_parser():
     parser_prepare.add_argument(
         '--config', type=str, help='Configuration file.', default='config.ini'
     )    
+    parser_prepare.add_argument(
+        '-t', '--threads', nargs='?', type=int, default=1, 
+        help='the number of threads for volume calculations'
+    )
 
     # run arguments
     parser_run.add_argument(
@@ -129,7 +133,7 @@ def main():
     command = arg_parser()
     path = Path(command['folder'])
     if command['action'] == 'prepare':
-        prepare_task(path, command['config'])
+        prepare_task(path, command['config'], command['threads'])
     elif command['action'] == 'run':
         run_task(path, command['threads'])
     elif command['action'] == 'fetch':
@@ -170,7 +174,7 @@ def create_source(path, time, sdefname, sd, zero, int_filter, vol_filter):
         f.write(sdef)
 
 
-def prepare_task(path, config_name):
+def prepare_task(path, config_name, threads):
     print('path: ', path)
     casepath = Path(path / 'cases')
     print('casepath: ', casepath)
@@ -188,7 +192,8 @@ def prepare_task(path, config_name):
         libxs=fispact['libxs'],
         inventory=path / fispact['inventory'],
         approach=model['approach'],
-        norm_flux=float(fispact['norm_flux'])
+        norm_flux=float(fispact['norm_flux']),
+        threads=threads
     )
     # except:
     #    pass

@@ -45,6 +45,7 @@ def test_select_cells(model, mesh, cell_names):
     assert set(cell_names) == set(c.name() for c in cells)
 
 
+@pytest.mark.parametrize('threads', [1, 2, 4])
 @pytest.mark.parametrize('answer', [
     {
         (1, 0, 1, 0): 3, (1, 1, 1, 0): 6, (1, 2, 1, 0): 3, (2, 1, 0, 0): 3,
@@ -54,8 +55,8 @@ def test_select_cells(model, mesh, cell_names):
         (21, 3, 1, 0): 1.047
     }
 ])
-def test_calculate_volumes(cells, mesh, answer):
-    volumes = prepare.calculate_volumes(cells, mesh, min_volume=1.e-6)
+def test_calculate_volumes(cells, mesh, answer, threads):
+    volumes = prepare.calculate_volumes(cells, mesh, min_volume=1.e-6, threads=threads)
     assert len(answer) == len(volumes)
     for k, v in volumes.items():
         assert v == pytest.approx(answer[k], 0.02)

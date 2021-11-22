@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from collections import deque, defaultdict
+from functools import reduce
+from multiprocessing.pool import Pool
 
 import numpy as np
 from click import progressbar
@@ -12,6 +14,7 @@ from mckit.transformation import Transformation
 from . import template
 from . import data
 from . import utils
+from . import vol_calculator
 
 
 def parse_transforamtion(input):
@@ -59,7 +62,9 @@ def create_tasks(path, **kwargs):
     cells = select_cells(model, bbox)
 
     print('Calculate volumes ...')
-    vol_dict = calculate_volumes(cells, fmesh.mesh, kwargs['min_volume'])
+    vol_dict = calculate_volumes(
+        cells, fmesh.mesh, kwargs['min_volume'], threads=kwargs['threads']
+    )
 
     mat_dict = get_materials(cells)
     den_dict = get_densities(cells)
@@ -121,7 +126,7 @@ def init_templates(inv_filename, norm_flux, libs, libxs, nerg_groups):
     return utils.find_zero_step(text)
 
 
-def calculate_volumes(cells, mesh, min_volume):
+def calculate_volumes(cells, mesh, min_volume, threads=1):
     """Calculates volumes of model cells in every mesh voxel.
 
     Parameters
@@ -132,25 +137,22 @@ def calculate_volumes(cells, mesh, min_volume):
         Mesh.
     min_volume : float
         Minimum volume for volume calculations.
+    threads : int
+        The number of threads to calculate volumes. Default: 1.
 
     Returns
     -------
     volumes : dict
         A dictionary of cell volumes. 
     """
-    volumes = defaultdict(int)
-    nx, ny, nz = mesh.shape
-    with progressbar(length=nx*ny*nz) as bar:
-        for i in range(mesh.shape[0]):
-            for j in range(mesh.shape[1]):
-                for k in range(mesh.shape[2]):
-                    box = mesh.get_voxel(i, j, k)
-                    for c in cells:
-                        vol = c.shape.volume(box=box, min_volume=min_volume)
-                        if vol > 0:
-                            index = (c.name(), i, j, k)
-                            volumes[index] += vol
-                    bar.update(1)
+    init_func = vol_calculator.volume_calculator_initilizer
+    calc_func = vol_calculator.calculate_volumes
+    with progressbar(cells) as bar:
+        with Pool(threads, init_func, (mesh, min_volume)) as pool:
+            result = pool.map(calc_func, bar)
+    volumes = {}
+    for x in result:
+        volumes.update(x)
     return volumes
 
 
