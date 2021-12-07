@@ -91,6 +91,10 @@ def arg_parser():
         '-t', '--threads', nargs='?', type=int, default=1, 
         help='the number of threads for volume calculations'
     )
+    parser_prepare.add_argument(
+        '-c', '--chunk', nargs='?', type=int, default=None,
+        help='chunk size - the number of cells to be passed to each worker'
+    )
 
     # run arguments
     parser_run.add_argument(
@@ -133,7 +137,7 @@ def main():
     command = arg_parser()
     path = Path(command['folder'])
     if command['action'] == 'prepare':
-        prepare_task(path, command['config'], command['threads'])
+        prepare_task(path, command['config'], command['threads'], command['chunk'])
     elif command['action'] == 'run':
         run_task(path, command['threads'])
     elif command['action'] == 'fetch':
@@ -172,9 +176,10 @@ def create_source(path, time, sdefname, sd, zero, int_filter, vol_filter):
     )
     with open(path / sdefname, 'w') as f:
         f.write(sdef)
+    source.source_to_vtk(str(path / sdefname), gamma_data)
 
 
-def prepare_task(path, config_name, threads):
+def prepare_task(path, config_name, threads, chunk):
     print('path: ', path)
     casepath = Path(path / 'cases')
     print('casepath: ', casepath)
@@ -193,7 +198,8 @@ def prepare_task(path, config_name, threads):
         inventory=path / fispact['inventory'],
         approach=model['approach'],
         norm_flux=float(fispact['norm_flux']),
-        threads=threads
+        threads=threads,
+        chunk=chunk
     )
     # except:
     #    pass

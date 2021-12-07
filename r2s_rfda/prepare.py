@@ -5,7 +5,6 @@ from functools import reduce
 from multiprocessing.pool import Pool
 
 import numpy as np
-from click import progressbar
 from mckit import read_mcnp
 from mckit.parser.meshtal_parser import read_meshtal
 from mckit.material import AVOGADRO
@@ -62,8 +61,9 @@ def create_tasks(path, **kwargs):
     cells = select_cells(model, bbox)
 
     print('Calculate volumes ...')
-    vol_dict = calculate_volumes(
-        cells, fmesh.mesh, kwargs['min_volume'], threads=kwargs['threads']
+    vol_dict = vol_calculator.calculate_volumes(
+        cells, fmesh.mesh, kwargs['min_volume'], threads=kwargs['threads'],
+        chunk=kwargs['chunk']
     )
 
     mat_dict = get_materials(cells)
@@ -124,36 +124,6 @@ def init_templates(inv_filename, norm_flux, libs, libxs, nerg_groups):
     template.init_files_template(libs)
     template.init_collapse_template(libxs, nerg_groups)
     return utils.find_zero_step(text)
-
-
-def calculate_volumes(cells, mesh, min_volume, threads=1):
-    """Calculates volumes of model cells in every mesh voxel.
-
-    Parameters
-    ----------
-    cells : list
-        List of cells in mesh.
-    mesh : RectMesh
-        Mesh.
-    min_volume : float
-        Minimum volume for volume calculations.
-    threads : int
-        The number of threads to calculate volumes. Default: 1.
-
-    Returns
-    -------
-    volumes : dict
-        A dictionary of cell volumes. 
-    """
-    init_func = vol_calculator.volume_calculator_initilizer
-    calc_func = vol_calculator.calculate_volumes
-    with progressbar(cells) as bar:
-        with Pool(threads, init_func, (mesh, min_volume)) as pool:
-            result = pool.map(calc_func, bar)
-    volumes = {}
-    for x in result:
-        volumes.update(x)
-    return volumes
 
 
 def select_cells(model, box):
