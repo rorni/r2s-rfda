@@ -4,7 +4,7 @@ import pytest
 from mckit import Composition, read_mcnp
 from mckit.fmesh import RectMesh
 
-from r2s_rfda import prepare
+from r2s_rfda import prepare, vol_calculator
 
 
 materials = [
@@ -56,7 +56,7 @@ def test_select_cells(model, mesh, cell_names):
     }
 ])
 def test_calculate_volumes(cells, mesh, answer, threads):
-    volumes = prepare.calculate_volumes(cells, mesh, min_volume=1.e-6, threads=threads)
+    volumes = vol_calculator.calculate_volumes(cells, mesh, min_volume=1.e-6, threads=threads)
     assert len(answer) == len(volumes)
     for k, v in volumes.items():
         assert v == pytest.approx(answer[k], 0.02)
