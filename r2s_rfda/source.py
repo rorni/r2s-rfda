@@ -1,9 +1,52 @@
 # -*- coding: utf-8 -*-
 
+from collections import defaultdict
+
 import numpy as np
 import mckit.source as mcs
+from pyevtk.hl import gridToVTK
 
 from . import data
+
+
+def source_to_vtk(filename, gamma_data):
+    """Creates visualization of the decay gamma source.
+    
+    Parameters
+    ----------
+    filename : str
+        Output file name.
+    gamma_data : SparseData
+        Data on gamma yield for every cell and voxel.
+
+    Returns
+    -------
+    vtk : pass
+        pass
+    """
+    dataname = 'GammaSource'
+
+    xpts = gamma_data.xbins
+    ypts = gamma_data.ybins
+    zpts = gamma_data.zbins
+    ebins = gamma_data.gbins
+
+    dx = np.diff(xpts)
+    dy = np.diff(ypts)
+    dz = np.diff(zpts)
+    cell_data = defaultdict(lambda: np.zeros((xpts.size-1, ypts.size-1, zpts.size-1)))
+
+    for (g, c, i, j, k), intensity in gamma_data.iter_nonzero():
+        key = 'G intensity {0:.2e} - {1:.2e} MeV'.format(ebins[g], ebins[g+1])
+        vol = dx[i] * dy[j] * dz[k]
+        cell_data[key][i, j, k] += intensity / vol
+
+    tot_data = 0
+    for v in cell_data.values():
+        tot_data += v
+    cell_data['G intensity total'] = tot_data
+
+    gridToVTK(filename, xpts, ypts, zpts, cellData=cell_data)
 
 
 def create_source(gamma_data, vol_dict, start_distr=1, int_filter=1.e-9, vol_filter=1.e-3):
@@ -24,8 +67,12 @@ def create_source(gamma_data, vol_dict, start_distr=1, int_filter=1.e-9, vol_fil
     source, intensity = activation_gamma_source(
         gamma_data, vol_dict, start_distr, int_filter=int_filter, vol_filter=vol_filter
     )
-    sdef = 'C total gamma intensity = {0:.5e}\n{1}'.format(intensity, source.mcnp_repr())
-    return sdef
+    sdef_lines = ['C total gamma intensity = {0:.5e}'.format(intensity)]
+    if gamma_data.mesh._tr is not None:
+        sdef_lines.append('C FMesh used for calculations has transformation:')
+        sdef_lines.append('C {0}'.format(gamma_data.mesh._tr.mcnp_repr()))
+    sdef_lines.append('{0}'.format(source.mcnp_repr()))
+    return '\n'.join(sdef_lines)
 
 
 def activation_gamma_source(gamma_data, vol_dict, start_name=1, int_filter=1.e-9, vol_filter=1.e-3, white_list=None):

@@ -1,16 +1,35 @@
 # -*- coding: utf-8 -*-
 
 from collections import deque, defaultdict
+from functools import reduce
+from multiprocessing.pool import Pool
 
 import numpy as np
 from click import progressbar
 from mckit.parser import from_file
 from mckit.parser.meshtal_parser import read_meshtal
 from mckit.material import AVOGADRO
+from mckit.transformation import Transformation
 
 from . import template
 from . import data
 from . import utils
+from . import vol_calculator
+
+
+def parse_transforamtion(input):
+    if input[0] == '*':
+        indegrees = True
+    else:
+        indegrees = False
+    input = input.strip('*() ')
+    entities = [float(x) for x in input.split()]
+    translation = entities[:3]
+    if len(entities) == 3:
+        rotation = None
+    else:
+        rotation = entities[3:]
+    return translation, rotation, indegrees    
 
 
 def read_mcnp(path):
@@ -34,7 +53,7 @@ def create_tasks(path, **kwargs):
     """
     model = read_mcnp_input(kwargs['mcnp_name'])
     
-    fmesh = read_fmesh_tally(kwargs['fmesh_name'], kwargs['tally_name'])
+    fmesh = read_fmesh_tally(kwargs['fmesh_name'], kwargs['tally_name'], kwargs['transform'])
 
     # set templates
     zero_index = init_templates(
@@ -47,7 +66,10 @@ def create_tasks(path, **kwargs):
     cells = select_cells(model, bbox)
 
     print('Calculate volumes ...')
-    vol_dict = calculate_volumes(cells, fmesh.mesh, kwargs['min_volume'])
+    vol_dict = vol_calculator.calculate_volumes(
+        cells, fmesh.mesh, kwargs['min_volume'], threads=kwargs['threads'],
+        chunk=kwargs['chunk']
+    )
 
     mat_dict = get_materials(cells)
     den_dict = get_densities(cells)
@@ -89,10 +111,15 @@ def read_mcnp_input(inp_filename):
     return read_mcnp(inp_filename)
 
 
-def read_fmesh_tally(fmesh_filename, tally_name):
+def read_fmesh_tally(fmesh_filename, tally_name, transform):
     print('Reading meshtal file ({0}) ...'.format(fmesh_filename))
     tallies = read_meshtal(fmesh_filename)
-    return tallies[tally_name]
+    tally = tallies[tally_name]
+    if transform is not None:
+        transl, rot, indegrees = parse_transforamtion(transform)
+        tr = Transformation(transl, rot, indegrees=indegrees, name=1)
+        tally.mesh.transform(tr)
+    return tally
 
 
 def init_templates(inv_filename, norm_flux, libs, libxs, nerg_groups):
@@ -102,39 +129,6 @@ def init_templates(inv_filename, norm_flux, libs, libxs, nerg_groups):
     template.init_files_template(libs)
     template.init_collapse_template(libxs, nerg_groups)
     return utils.find_zero_step(text)
-
-
-def calculate_volumes(cells, mesh, min_volume):
-    """Calculates volumes of model cells in every mesh voxel.
-
-    Parameters
-    ----------
-    cells : list
-        List of cells in mesh.
-    mesh : RectMesh
-        Mesh.
-    min_volume : float
-        Minimum volume for volume calculations.
-
-    Returns
-    -------
-    volumes : dict
-        A dictionary of cell volumes. 
-    """
-    volumes = defaultdict(int)
-    nx, ny, nz = mesh.shape
-    with progressbar(length=nx*ny*nz) as bar:
-        for i in range(mesh.shape[0]):
-            for j in range(mesh.shape[1]):
-                for k in range(mesh.shape[2]):
-                    box = mesh.get_voxel(i, j, k)
-                    for c in cells:
-                        vol = c.shape.volume(box=box, min_volume=min_volume)
-                        if vol > 0:
-                            index = (c.name(), i, j, k)
-                            volumes[index] += vol
-                    bar.update(1)
-    return volumes
 
 
 def select_cells(model, box):

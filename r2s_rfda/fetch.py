@@ -127,7 +127,7 @@ def dict_to_array(data_dict, shape, mat_labels):
 
 def flatten_mass_coeffs(sindex, mass_coeffs, c2m, mat_labels):
     mat_index = {m: i for i, m in enumerate(mat_labels)}
-    data = np.empty((len(mat_labels), len(sindex)))
+    data = np.zeros((len(mat_labels), len(sindex)))
     for q, (c, i, j, k) in enumerate(sindex):
         coeff = mass_coeffs[(c, i, j, k)]
         m = c2m[c]
@@ -137,7 +137,7 @@ def flatten_mass_coeffs(sindex, mass_coeffs, c2m, mat_labels):
 
 def flatten_flux_coeffs(sindex, flux_coeffs):
     ne = flux_coeffs.shape[0]
-    result = np.empty((ne, len(sindex)))
+    result = np.zeros((ne, len(sindex)))
     for q, (c, i, j, k) in enumerate(sindex):
         result[:, q] = flux_coeffs[:, i, j, k]
     return result

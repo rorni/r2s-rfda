@@ -5,14 +5,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='r2s_rfda',
-    version='0.3',
+    version='0.4.1',
     packages=find_packages(),
     install_requires=[
-        #  'sparse',
         'pypact',
         'mckit',
-        #  'mckit==0.1.2',
-        #  'numpy'
+        'pyevtk',
     ],
     test_requires=[
         'pytest',

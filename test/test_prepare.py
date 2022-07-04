@@ -4,9 +4,8 @@ import pytest
 from mckit import Composition
 from mckit.fmesh import RectMesh
 
-from r2s_rfda import prepare
+from r2s_rfda import prepare, vol_calculator
 from r2s_rfda.prepare import read_mcnp
-
 
 materials = [
     'DENSITY 1.0000e+00\nFUEL 5\n  H1 1.3370e+26\n  H2 1.5377e+22\n  O16 6.6693e+25\n  O17 2.5405e+22\n  O18 1.3705e+23',
@@ -46,6 +45,7 @@ def test_select_cells(model, mesh, cell_names):
     assert set(cell_names) == set(c.name() for c in cells)
 
 
+@pytest.mark.parametrize('threads', [1, 2, 4])
 @pytest.mark.parametrize('answer', [
     {
         (1, 0, 1, 0): 3, (1, 1, 1, 0): 6, (1, 2, 1, 0): 3, (2, 1, 0, 0): 3,
@@ -55,8 +55,8 @@ def test_select_cells(model, mesh, cell_names):
         (21, 3, 1, 0): 1.047
     }
 ])
-def test_calculate_volumes(cells, mesh, answer):
-    volumes = prepare.calculate_volumes(cells, mesh, min_volume=1.e-6)
+def test_calculate_volumes(cells, mesh, answer, threads):
+    volumes = vol_calculator.calculate_volumes(cells, mesh, min_volume=1.e-6, threads=threads)
     assert len(answer) == len(volumes)
     for k, v in volumes.items():
         assert v == pytest.approx(answer[k], 0.02)
