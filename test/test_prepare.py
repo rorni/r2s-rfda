@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from mckit import Composition, read_mcnp
+from mckit import Composition
 from mckit.fmesh import RectMesh
 
 from r2s_rfda import prepare
+from r2s_rfda.prepare import read_mcnp
 
 
 materials = [

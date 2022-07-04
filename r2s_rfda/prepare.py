@@ -4,13 +4,17 @@ from collections import deque, defaultdict
 
 import numpy as np
 from click import progressbar
-from mckit import read_mcnp
+from mckit.parser import from_file
 from mckit.parser.meshtal_parser import read_meshtal
 from mckit.material import AVOGADRO
 
 from . import template
 from . import data
 from . import utils
+
+
+def read_mcnp(path):
+    return from_file(path).universe
 
 
 def create_tasks(path, **kwargs):

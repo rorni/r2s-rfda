@@ -7,6 +7,7 @@ import numpy as np
 
 from r2s_rfda import launcher, fetch
 
+pytest.skip("The old implementation create to much mess in the working tree", allow_module_level=True)
 
 def create_config(path):
     pathlib = os.environ.get('FISPACT_DATA', "")
