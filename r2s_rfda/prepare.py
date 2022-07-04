@@ -5,7 +5,8 @@ from functools import reduce
 from multiprocessing.pool import Pool
 
 import numpy as np
-from mckit import read_mcnp
+from click import progressbar
+from mckit.parser import from_file
 from mckit.parser.meshtal_parser import read_meshtal
 from mckit.material import AVOGADRO
 from mckit.transformation import Transformation
@@ -29,6 +30,10 @@ def parse_transforamtion(input):
     else:
         rotation = entities[3:]
     return translation, rotation, indegrees    
+
+
+def read_mcnp(path):
+    return from_file(path).universe
 
 
 def create_tasks(path, **kwargs):

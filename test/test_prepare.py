@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from mckit import Composition, read_mcnp
+from mckit import Composition
 from mckit.fmesh import RectMesh
 
 from r2s_rfda import prepare, vol_calculator
-
+from r2s_rfda.prepare import read_mcnp
 
 materials = [
     'DENSITY 1.0000e+00\nFUEL 5\n  H1 1.3370e+26\n  H2 1.5377e+22\n  O16 6.6693e+25\n  O17 2.5405e+22\n  O18 1.3705e+23',
