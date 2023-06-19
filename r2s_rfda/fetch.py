@@ -27,11 +27,12 @@ def collect(path, config):
     A_dict = defaultdict(lambda: defaultdict(dict))
     N_dict = defaultdict(lambda: defaultdict(dict))
     G_dict = defaultdict(lambda: defaultdict(dict))
+    H_dict = defaultdict(lambda: defaultdict(dict))
     nuclides = set()
     print('Start data collection ...')
     with progressbar(config['index_output'].items()) as bar:
         for index, casepath in bar:
-            time_labels, ebins, atoms, activity, gamma_yield = read_fispact_output(casepath)
+            time_labels, ebins, atoms, activity, gamma_yield, heat = read_fispact_output(casepath)
             for (t, nuc), act in activity.items():
                 A_dict[t][nuc][index] = act
                 nuclides.add(nuc)
@@ -40,9 +41,13 @@ def collect(path, config):
             for t, gamma_ar in gamma_yield.items():
                 for i, gam in enumerate(gamma_ar):
                     G_dict[t][i][index] = gam
+            for t, heat_dict in heat.items():
+                for lab, val in heat_dict.items():
+                    H_dict[t][lab][index] = val
     
     g_labels = list(range(len(ebins) - 1))
     nuclides = list(sorted(nuclides))
+    heat_labels = ['alpha', 'beta', 'gamma', 'total']
 
     result_conf = prepare_result_folder(path, time_labels)
     with open(path / 'result.cfg', 'bw') as f:
@@ -52,6 +57,16 @@ def collect(path, config):
         flux_coeffs = flatten_flux_coeffs(sp_index, config['alpha'])
         mat_labels = list(sorted(set(config['c2m'].values())))
         mass_coeffs = flatten_mass_coeffs(sp_index, config['beta'], config['c2m'], mat_labels)
+
+    print('Preparing decay heating data ...')
+    with progressbar(H_dict.items()) as bar:
+        for t, frame_dict in bar:
+            if config['approach'] == 'full':
+                frame = get_full_frame(frame_dict, sp_index, heat_labels)
+            else:
+                frame = get_simple_frame(frame_dict, flux_coeffs, mass_coeffs, mat_labels, heat_labels)
+            frame_obj = data.GammaFrame(frame, sp_index, t, heat_labels, config['mesh'])
+            save_data(result_conf['heat'][t], frame_obj)
 
     print('Preparing gamma data ...')
     with progressbar(G_dict.items()) as bar:
@@ -108,9 +123,10 @@ def get_simple_frame(frame_dict, flux_coeffs, mass_coeffs, mat_labels, var_label
 def prepare_result_folder(path, timelabels):
     folder = path / 'results'
     folder.mkdir()
-    data = {'gamma': {}, 'atoms': {}, 'activity': {}}
+    data = {'gamma': {}, 'atoms': {}, 'activity': {}, 'heat': {}}
     for t in timelabels:
         data['gamma'][t] = folder / 'gamma_{0}.dat'.format(t)
+        data['heat'][t] = folder / 'heat_{0}.dat'.format(t)
         data['atoms'][t] = folder / 'atoms_{0}.dat'.format(t)
         data['activity'][t] = folder / 'activity_{0}.dat'.format(t)
     return data
@@ -208,16 +224,23 @@ def read_fispact_output(path):
     atoms = {}
     activity = {}
     gamma_yield = {}
+    heat = {}
 
     for i, ts in enumerate(idata):
         durations.append(ts.duration)
         time_labels.append(int(np.array(durations).sum()))
         gamma_yield[time_labels[-1]] = np.array(ts.gamma_spectrum.values) / eners
+        heat[time_labels[-1]] = {
+            'total': ts.total_heat,
+            'alpha': ts.alpha_heat,
+            'beta': ts.beta_heat,
+            'gamma': ts.gamma_heat
+        }
         for nuc in ts.nuclides:
             name = nuc.element + str(nuc.isotope) + nuc.state
             atoms[(time_labels[-1], name)] = nuc.atoms
             activity[(time_labels[-1], name)] = nuc.activity
-    return time_labels, ebins, atoms, activity, gamma_yield
+    return time_labels, ebins, atoms, activity, gamma_yield, heat
 
 
 def load_data(path):
