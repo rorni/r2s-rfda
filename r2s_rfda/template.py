@@ -60,12 +60,10 @@ def init_inventory_template(inptemp, norm_flux):
     i = 0
     for string in substrings:
         if try_number:
-            print('"{0}"'.format(string))
             if zero_pattern.match(string):
                 result.append(string)
             else:
                 match = float_pattern.match(string)
-                print(match.group(0))
                 if not match:
                     raise ValueError('Scenario template contains incorrect data')
                 flux_coeffs.append(float(match.group(0)) / norm_flux)

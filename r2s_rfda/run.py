@@ -2,7 +2,10 @@
 
 import re
 import subprocess
+import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
+
+from click import progressbar
 
 
 class FispactError(Exception):
@@ -65,7 +68,10 @@ def run_tasks(task_list, verbose=False, threads=1):
         The number of threads to execute. Default: 1.
     """
     with ThreadPoolExecutor(max_workers=threads) as pool:
-        pool.map(run_case, task_list)
+        futures = [pool.submit(run_case, t) for t in task_list]
+        with progressbar(length=len(futures)) as bar:
+            for _ in concurrent.futures.as_completed(futures):
+                bar.update(1)
 
 
 def run_case(task_case):
